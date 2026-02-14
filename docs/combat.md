@@ -146,11 +146,13 @@ minimum damage = 1 (attacks always do at least 1)
 
 Exact stats TBD — these establish the categories and tactical roles.
 
-### Weapon Slots
+### Weapon Slot
 
-- **Primary weapon** — main combat weapon
-- **Secondary item** — could be a second weapon, shield, or magical item
-- Swap between them using a secondary action
+- **Single weapon slot** — defines the entity's full combat loadout
+- A "Sword & Shield" is one item; a "Greatsword" is one item
+- Swapping weapons is a **secondary action** — old weapon goes to inventory, new one
+  equips from inventory
+- This allows mid-combat role shifts (melee → ranged) at the cost of a secondary action
 
 ## AI Behavior Patterns
 
