@@ -35,11 +35,11 @@ before any other regions open.
 
 ## Region Names & Themes
 
-| Region              | Theme                          | Phase | Status      |
-|---------------------|--------------------------------|-------|-------------|
-| The Verdant Threshold | Corrupted forest, overgrown ruins, the gateway to the Sanctuary | 1 | Starting zone |
-| The Shattered Kingdom | Ruined ancient city, crumbling streets, corrupted inhabitants | 2 | Future |
-| The Ashen Deep       | Cathedral descent into deep crypts, multi-floor dungeon | 3 | Future |
+| Region                | Theme                                                           | Phase | Status        |
+| --------------------- | --------------------------------------------------------------- | ----- | ------------- |
+| The Verdant Threshold | Corrupted forest, overgrown ruins, the gateway to the Sanctuary | 1     | Starting zone |
+| The Shattered Kingdom | Ruined ancient city, crumbling streets, corrupted inhabitants   | 2     | Future        |
+| The Ashen Deep        | Cathedral descent into deep crypts, multi-floor dungeon         | 3     | Future        |
 
 These are working names. Each region connects to the Sanctuary via a portal discovered
 during play.
@@ -88,7 +88,7 @@ Region Entry
 ### Pacing Within a Region
 
 | Segment              | Intensity | Duration  | Purpose                        |
-|----------------------|-----------|-----------|--------------------------------|
+| -------------------- | --------- | --------- | ------------------------------ |
 | Overworld approach   | Low-Med   | 5-10 min  | Explore, gear up, learn layout |
 | Minor dungeon        | Medium    | 10-15 min | Focused challenge, loot spike  |
 | Overworld transition | Low       | 3-5 min   | Breathe, manage inventory      |
@@ -128,6 +128,7 @@ The player's first runs begin at the **edge of the Threshold** with no gear. Thi
 gateway to the rest of the game.
 
 **Structure:**
+
 - Small, guided area that opens into broader exploration
 - Guarantees the player finds: a melee weapon, a ranged weapon, and a magical wand
 - **Echo messages** scattered throughout — glowing inscriptions left by previous
@@ -140,6 +141,7 @@ gateway to the rest of the game.
 - The path naturally leads toward the Sanctuary
 
 **Death in the Threshold (pre-Sanctuary):**
+
 - The player respawns **nearby in a safe location**, not at the start of the zone
 - Gear is lost as normal (skeleton left behind)
 - This trains the player on the Echo/death system without punishing them with a full restart
@@ -199,26 +201,26 @@ Sanctuary Portal → Threshold Entry
 
 ### Enemy Roster — The Verdant Threshold
 
-| Enemy             | Pattern   | Notes                                    |
-|-------------------|-----------|------------------------------------------|
-| Corrupted Wolf    | Charger   | Fast, low HP, appears in packs of 2-3    |
-| Thornling         | Swarm     | Weak, slow, but numerous. 4-6 at a time  |
-| Blighted Archer   | Archer    | Ranged, keeps distance, low HP           |
-| Moss Stalker      | Flanker   | Tries to get behind the player           |
-| Blight Spitter    | Archer    | Ranged, poison effect? (future)          |
-| Rootbound Guardian| Guardian  | Mini-boss. High HP, reach attack, holds position |
-| Shrine Defiler    | Caster    | Mini-boss. Uses magical secondary actions |
-| Threshold Warden  | TBD       | Region boss. Complex multi-phase fight?  |
+| Enemy              | Pattern  | Notes                                            |
+| ------------------ | -------- | ------------------------------------------------ |
+| Corrupted Wolf     | Charger  | Fast, low HP, appears in packs of 2-3            |
+| Thornling          | Swarm    | Weak, slow, but numerous. 4-6 at a time          |
+| Blighted Archer    | Archer   | Ranged, keeps distance, low HP                   |
+| Moss Stalker       | Flanker  | Tries to get behind the player                   |
+| Blight Spitter     | Archer   | Ranged, poison effect? (future)                  |
+| Rootbound Guardian | Guardian | Mini-boss. High HP, reach attack, holds position |
+| Shrine Defiler     | Caster   | Mini-boss. Uses magical secondary actions        |
+| Threshold Warden   | TBD      | Region boss. Complex multi-phase fight?          |
 
 ### Loot Profile — The Verdant Threshold
 
-| Source             | Expected Rarity                           |
-|--------------------|-------------------------------------------|
-| Overworld enemies  | Common, occasional Uncommon               |
-| Dungeon enemies    | Common-Uncommon                           |
-| Dungeon chests     | Uncommon, rare Rare                       |
-| Mini-boss          | Guaranteed Uncommon+, chance at Rare      |
-| Region boss        | Guaranteed Rare+, chance at Epic          |
+| Source            | Expected Rarity                      |
+| ----------------- | ------------------------------------ |
+| Overworld enemies | Common, occasional Uncommon          |
+| Dungeon enemies   | Common-Uncommon                      |
+| Dungeon chests    | Uncommon, rare Rare                  |
+| Mini-boss         | Guaranteed Uncommon+, chance at Rare |
+| Region boss       | Guaranteed Rare+, chance at Epic     |
 
 ## Open Questions
 

@@ -49,13 +49,13 @@ roguelite progression with Diablo-style loot management and base-building.
 
 ## Inspirations & Influences
 
-| Influence           | What We Take                                    | What We Leave Behind                     |
-|---------------------|-------------------------------------------------|------------------------------------------|
-| Stormlight Archive  | Grand scope, hard magic, tonal balance, wonder  | Sprawling length, dozens of POV characters|
-| Hades               | Meta-progression feel, "death is progress"      | Fixed map, act-skipping mechanics         |
-| Diablo              | Hub, stash, merchant, loot-driven gameplay      | Always-online, endless endgame grind      |
-| Dark Souls          | Gothic atmosphere, corpse runs, environmental storytelling | Extreme punishment, obtuse mechanics |
-| Slay the Spire      | Act structure, run variety                      | Card-based combat, non-spatial gameplay   |
+| Influence          | What We Take                                               | What We Leave Behind                       |
+| ------------------ | ---------------------------------------------------------- | ------------------------------------------ |
+| Stormlight Archive | Grand scope, hard magic, tonal balance, wonder             | Sprawling length, dozens of POV characters |
+| Hades              | Meta-progression feel, "death is progress"                 | Fixed map, act-skipping mechanics          |
+| Diablo             | Hub, stash, merchant, loot-driven gameplay                 | Always-online, endless endgame grind       |
+| Dark Souls         | Gothic atmosphere, corpse runs, environmental storytelling | Extreme punishment, obtuse mechanics       |
+| Slay the Spire     | Act structure, run variety                                 | Card-based combat, non-spatial gameplay    |
 
 ## Target Experience
 

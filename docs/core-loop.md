@@ -20,6 +20,7 @@ A magical ruin whose ancient protections hold the corruption at bay. Once discov
 becomes the adventurer's permanent base and respawn point.
 
 **Hub features:**
+
 - **Stash:** Store gear across runs. Build reserves. Decide what to risk vs. what to save.
 - **Merchant:** Sell excess loot for currency. Buy stat upgrades (strength, health, defense,
   speed, etc.). Upgrade costs scale — early upgrades are impactful, later ones are marginal.
@@ -77,14 +78,14 @@ Run → Death → Lose All Gear → Retain XP/Stats → Respawn at Hub → New R
 
 ### What Persists Across Deaths
 
-| Persists                     | Resets                        |
-|------------------------------|-------------------------------|
-| Character level / experience | All carried gear              |
-| Stat upgrades (HP, STR, etc.)| Consumable items              |
-| Hub discovery (permanent)    | Dungeon/overworld layout      |
-| Stashed items at Hub         | Enemy positions               |
-| Skeletons from past deaths   | Progress within current run   |
-| Merchant inventory/upgrades  |                               |
+| Persists                      | Resets                      |
+| ----------------------------- | --------------------------- |
+| Character level / experience  | All carried gear            |
+| Stat upgrades (HP, STR, etc.) | Consumable items            |
+| Hub discovery (permanent)     | Dungeon/overworld layout    |
+| Stashed items at Hub          | Enemy positions             |
+| Skeletons from past deaths    | Progress within current run |
+| Merchant inventory/upgrades   |                             |
 
 ### Stat Upgrades
 
@@ -117,12 +118,12 @@ When the adventurer dies, a skeleton is left at the death location in future run
 
 ## Development Phases
 
-| Phase | Content                              | Goal                              |
-|-------|--------------------------------------|-----------------------------------|
-| 1     | Tutorial + Hub + Act I (Forest)      | Core loop playable and fun        |
-| 2     | Act II (Ancient City + crypts)       | Escalation, act transitions work  |
-| 3     | Act III (Deep crypts, multi-floor)   | Full run completable              |
-| 4     | Final boss + ending                  | Narrative resolution              |
+| Phase | Content                            | Goal                             |
+| ----- | ---------------------------------- | -------------------------------- |
+| 1     | Tutorial + Hub + Act I (Forest)    | Core loop playable and fun       |
+| 2     | Act II (Ancient City + crypts)     | Escalation, act transitions work |
+| 3     | Act III (Deep crypts, multi-floor) | Full run completable             |
+| 4     | Final boss + ending                | Narrative resolution             |
 
 Each phase delivers a complete, testable experience. Phase 1 is a small but whole game.
 

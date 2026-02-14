@@ -18,6 +18,7 @@ Every entity in the game world gets one turn per round. Each turn consists of:
 - **Primary action** (optional, once) — attack, use consumable item, or hold/defend
 
 Rules:
+
 - Secondary action and movement can be performed in **any order** and **interleaved**
   (e.g., move 2 tiles, swap weapon, move 1 more tile)
 - Executing the **primary action ends the entity's turn immediately**
@@ -132,17 +133,17 @@ minimum damage = 1 (attacks always do at least 1)
 
 ## Weapon Categories
 
-| Category | Range | Tiles | Notes                                      |
-|----------|-------|-------|--------------------------------------------|
-| Sword    | Melee | 1     | Balanced damage                            |
-| Axe      | Melee | 1     | High damage, slower?                       |
-| Mace     | Melee | 1     | Bonus vs armored?                          |
-| Spear    | Reach | 2     | Can attack without being adjacent           |
-| Halberd  | Reach | 2     | Higher damage reach weapon                  |
-| Bow      | Ranged| 6?    | Requires line-of-sight, ammo TBD           |
-| Crossbow | Ranged| 8?    | Higher damage, lower fire rate?             |
-| Staff    | Ranged| 4?    | Magical ranged attack, no ammo             |
-| Wand     | Ranged| 3?    | Shorter range, magical effects              |
+| Category | Range  | Tiles | Notes                             |
+| -------- | ------ | ----- | --------------------------------- |
+| Sword    | Melee  | 1     | Balanced damage                   |
+| Axe      | Melee  | 1     | High damage, slower?              |
+| Mace     | Melee  | 1     | Bonus vs armored?                 |
+| Spear    | Reach  | 2     | Can attack without being adjacent |
+| Halberd  | Reach  | 2     | Higher damage reach weapon        |
+| Bow      | Ranged | 6?    | Requires line-of-sight, ammo TBD  |
+| Crossbow | Ranged | 8?    | Higher damage, lower fire rate?   |
+| Staff    | Ranged | 4?    | Magical ranged attack, no ammo    |
+| Wand     | Ranged | 3?    | Shorter range, magical effects    |
 
 Exact stats TBD — these establish the categories and tactical roles.
 
@@ -160,16 +161,16 @@ All non-player entities use behavior trees to decide how to spend their turn. Si
 entity follows the same action economy, behavior trees simply choose: what to target, whether
 to use a secondary action, where to move, and what primary action to take.
 
-| Pattern    | Description                                              |
-|------------|----------------------------------------------------------|
-| Charger    | Moves directly toward target, melee attacks              |
-| Flanker    | Tries to approach from the side or behind                |
-| Archer     | Keeps distance, uses ranged attacks, retreats if close   |
-| Guardian   | Holds position, attacks when target is in range          |
-| Swarm      | Weak individually, moves in groups, surrounds            |
-| Caster     | Triggers magical effects (secondary), then attacks       |
-| Passive    | Non-hostile. Flees when attacked. (Merchants, NPCs)      |
-| Ally       | Follows player, targets player's enemies. (Future)       |
+| Pattern  | Description                                            |
+| -------- | ------------------------------------------------------ |
+| Charger  | Moves directly toward target, melee attacks            |
+| Flanker  | Tries to approach from the side or behind              |
+| Archer   | Keeps distance, uses ranged attacks, retreats if close |
+| Guardian | Holds position, attacks when target is in range        |
+| Swarm    | Weak individually, moves in groups, surrounds          |
+| Caster   | Triggers magical effects (secondary), then attacks     |
+| Passive  | Non-hostile. Flees when attacked. (Merchants, NPCs)    |
+| Ally     | Follows player, targets player's enemies. (Future)     |
 
 These patterns work for any entity type. An NPC guard uses the Guardian pattern. A corrupted
 merchant might switch from Passive to Charger. A summoned creature uses Ally. The behavior
@@ -183,11 +184,11 @@ tree is a property of the entity, not its type.
 
 ### Scaling by Act
 
-| Act | Enemy Complexity                                          |
-|-----|-----------------------------------------------------------|
-| I   | Chargers, Guardians, basic Swarms. Simple, predictable.   |
-| II  | Add Flankers, Archers. Enemies use positioning.           |
-| III | Add Casters, complex Swarms. Enemies use secondary actions.|
+| Act | Enemy Complexity                                            |
+| --- | ----------------------------------------------------------- |
+| I   | Chargers, Guardians, basic Swarms. Simple, predictable.     |
+| II  | Add Flankers, Archers. Enemies use positioning.             |
+| III | Add Casters, complex Swarms. Enemies use secondary actions. |
 
 ## Grid Tactics
 
