@@ -2,14 +2,15 @@
 
 ## Technology Stack
 
-| Component | Choice                   | Rationale                                                                 |
-| --------- | ------------------------ | ------------------------------------------------------------------------- |
-| Language  | TypeScript               | Strong typing, excellent AI code generation, broad ecosystem              |
-| Runtime   | Node.js                  | Fast, cross-platform, good terminal support                               |
-| Database  | SQLite (better-sqlite3)  | Portable, single-file, synchronous API, no server needed                  |
-| ECS       | Custom                   | Tailored to our data model (complex components like inventory, equipment) |
-| Rendering | Custom abstraction layer | Raw ANSI escape codes behind a renderer interface, swappable              |
-| Build     | TBD                      | tsc, tsup, or similar                                                     |
+| Component  | Choice                   | Rationale                                                                 |
+| ---------- | ------------------------ | ------------------------------------------------------------------------- |
+| Language   | TypeScript               | Strong typing, excellent AI code generation, broad ecosystem              |
+| Runtime    | Bun                      | Fast, built-in SQLite, built-in bundler, built-in test runner             |
+| Database   | SQLite (bun:sqlite)      | Built into Bun runtime, synchronous API, no external dependency           |
+| ECS        | Custom                   | Tailored to our data model (complex components like inventory, equipment) |
+| Rendering  | Custom abstraction layer | Raw ANSI escape codes behind a renderer interface, swappable              |
+| Tooling    | Bun                      | bun install, bun test, bun build, bun run — single tool for everything    |
+| Formatting | Prettier                 | Already configured                                                        |
 
 ## Architecture Overview
 
@@ -171,24 +172,24 @@ Layout is configurable — panels can be rearranged without modifying their rend
 
 ### Key Bindings
 
-| Key       | Context   | Action                                          |
-| --------- | --------- | ----------------------------------------------- |
-| ↑ ↓ ← →   | Gameplay  | Move (1 tile per keypress, costs movement)      |
-| Tab       | Gameplay  | Cycle target to next visible entity             |
-| Shift+Tab | Gameplay  | Cycle target to previous visible entity         |
-| Space     | Gameplay  | Primary action: attack current target           |
-| Enter     | Gameplay  | Primary action: interact (pickup, portal, talk) |
-| .         | Gameplay  | Primary action: hold/defend (end turn)          |
-| s         | Gameplay  | Secondary action: swap weapon (from inventory)  |
-| a         | Gameplay  | Secondary action: trigger accessory 1           |
-| d         | Gameplay  | Secondary action: trigger accessory 2           |
-| i         | Gameplay  | Open inventory screen                           |
-| Escape    | Any       | Close current screen / open menu                |
-| 1-9       | Inventory | Select item by index                            |
-| e         | Inventory | Equip selected item                             |
-| u         | Inventory | Use selected item (consumable)                  |
-| x         | Inventory | Drop selected item                              |
-| q         | Menu      | Save and quit (saves at Hub only)               |
+| Key       | Context   | Action                                              |
+| --------- | --------- | --------------------------------------------------- |
+| ↑ ↓ ← →   | Gameplay  | Move (1 tile per keypress, costs movement)          |
+| Tab       | Gameplay  | Cycle target to next visible entity                 |
+| Shift+Tab | Gameplay  | Cycle target to previous visible entity             |
+| Space     | Gameplay  | Primary action: attack current target               |
+| Enter     | Gameplay  | Primary action: interact (pickup, portal, talk)     |
+| u         | Gameplay  | Primary action: use consumable (opens quick-select) |
+| .         | Gameplay  | Primary action: hold/defend (end turn)              |
+| s         | Gameplay  | Secondary action: swap weapon (opens quick-select)  |
+| a         | Gameplay  | Secondary action: trigger accessory 1               |
+| d         | Gameplay  | Secondary action: trigger accessory 2               |
+| i         | Gameplay  | Open inventory screen (browse, manage, drop)        |
+| Escape    | Any       | Close current screen / open menu                    |
+| 1-9       | Inventory | Select item by index                                |
+| e         | Inventory | Equip selected item                                 |
+| x         | Inventory | Drop selected item                                  |
+| q         | Menu      | Save and quit (saves at Hub only)                   |
 
 ### Input State Machine
 
@@ -244,6 +245,24 @@ only operates on the persistent state tables.
 
 Saving is only available at the Sanctuary. Loading always resumes at the Sanctuary.
 
+### Data Access Pattern
+
+No ORM. The game uses `bun:sqlite` directly behind a **typed repository layer**. Each
+repository owns the SQL for its domain and exposes typed methods. The rest of the game
+never sees SQL or the database connection.
+
+```
+bun:sqlite (built-in, zero deps)
+  └── Database connection (src/data/database.ts)
+       ├── PlayerRepository    — save/load player stats, XP, currency
+       ├── StashRepository     — add/remove/list stashed items
+       ├── SkeletonRepository  — manage up to 10 skeletons + their items
+       ├── PortalRepository    — track unlocked regions
+       ├── MerchantRepository  — upgrade prices, purchased upgrades
+       ├── FlagRepository      — game state flags
+       └── DefinitionLoader    — read-only access to item/enemy/loot defs
+```
+
 ## Project Structure (Proposed)
 
 ```
@@ -294,8 +313,7 @@ grave-echo/
 
 ## Open Questions
 
-- Build tool choice — tsc + node, tsx for dev, tsup for bundling?
-- Testing strategy — unit tests for systems? Integration tests for turn flow?
+- Testing strategy — unit tests for systems? Integration tests for turn flow? (bun test)
 - Map representation — 2D array of tile entities? Separate tile map + entity layer?
 - FOV/visibility — should the player only see nearby tiles? Fog of war?
 - How large is the game grid viewport? Fixed size or adaptive to terminal?
