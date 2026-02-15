@@ -2,6 +2,7 @@ import type { Color, Renderer } from "../renderer.ts";
 import type { World } from "../../ecs/world.ts";
 import type { Region } from "../layout.ts";
 import { getEffectiveStats } from "../../ecs/systems/stats.ts";
+import { getEncumbrancePenalty } from "../../ecs/systems/turn.ts";
 
 export function renderPlayerStats(
   renderer: Renderer,
@@ -128,6 +129,22 @@ export function renderPlayerStats(
       inv.carryCapacity > 0
         ? Math.round((inv.totalWeight / inv.carryCapacity) * 100)
         : 0;
-    line(`Weight: ${inv.totalWeight}/${inv.carryCapacity} (${pct}%)`);
+    const penalty = getEncumbrancePenalty(world, pid);
+    let weightColor: Color = "gray";
+    let suffix = "";
+    if (penalty === Infinity) {
+      weightColor = "red";
+      suffix = " IMMOBILE";
+    } else if (penalty === 2) {
+      weightColor = "brightRed";
+      suffix = " -2 spd";
+    } else if (penalty === 1) {
+      weightColor = "yellow";
+      suffix = " -1 spd";
+    }
+    line(
+      `Weight: ${inv.totalWeight}/${inv.carryCapacity} (${pct}%)${suffix}`,
+      weightColor,
+    );
   }
 }
