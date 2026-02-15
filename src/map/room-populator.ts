@@ -22,6 +22,12 @@ import {
   createStrengthPotion,
   createDefensePotion,
 } from "../items/item-factory.ts";
+import {
+  createRotwoodArcher,
+  createThornbackGuardian,
+  createBlightvinesSkulker,
+  createHollowPatrol,
+} from "../enemies/enemy-factory.ts";
 import type { MessageLog } from "../ecs/systems/messages.ts";
 
 export interface PopulatorConfig {
@@ -151,6 +157,27 @@ function createGoblin(
     alertDuration: 5,
     turnsWithoutTarget: 0,
   });
+  world.addComponent(goblin, "Inventory", {
+    items: [],
+    totalWeight: 0,
+    carryCapacity: 50,
+  });
+  world.addComponent(goblin, "Equipment", {
+    weapon: null,
+    armor: null,
+    accessory1: null,
+    accessory2: null,
+  });
+
+  const weapon = createIronSword(world, 0, 0);
+  world.removeComponent(weapon, "Position");
+  const inv = world.getComponent(goblin, "Inventory")!;
+  const equip = world.getComponent(goblin, "Equipment")!;
+  inv.items.push(weapon);
+  const itemComp = world.getComponent(weapon, "Item");
+  if (itemComp) inv.totalWeight += itemComp.weight;
+  equip.weapon = weapon;
+
   return goblin;
 }
 
@@ -193,7 +220,102 @@ function createBoss(
     alertDuration: 8,
     turnsWithoutTarget: 0,
   });
+  world.addComponent(boss, "Inventory", {
+    items: [],
+    totalWeight: 0,
+    carryCapacity: 50,
+  });
+  world.addComponent(boss, "Equipment", {
+    weapon: null,
+    armor: null,
+    accessory1: null,
+    accessory2: null,
+  });
+
+  const weapon = createBattleAxe(world, 0, 0);
+  world.removeComponent(weapon, "Position");
+  const inv = world.getComponent(boss, "Inventory")!;
+  const equip = world.getComponent(boss, "Equipment")!;
+  inv.items.push(weapon);
+  const itemComp = world.getComponent(weapon, "Item");
+  if (itemComp) inv.totalWeight += itemComp.weight;
+  equip.weapon = weapon;
+
   return boss;
+}
+
+function generatePatrolPath(room: Room): { x: number; y: number }[] {
+  if (room.floors.length < 2) return [room.floors[0]!];
+  const sorted = [...room.floors].sort((a, b) => a.x - b.x || a.y - b.y);
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  return [
+    { x: first.x, y: first.y },
+    { x: last.x, y: last.y },
+  ];
+}
+
+function spawnEnemyByContext(
+  world: World,
+  x: number,
+  y: number,
+  player: number,
+  difficulty: number,
+  intensity: number,
+  tag: string,
+  enemyIndex: number,
+  rng: () => number,
+  room: Room,
+): number {
+  if (tag === "loot") {
+    return createThornbackGuardian(world, x, y, player, difficulty, intensity);
+  }
+
+  if (tag === "transition") {
+    const path = generatePatrolPath(room);
+    return createHollowPatrol(world, x, y, player, difficulty, intensity, path);
+  }
+
+  if (tag === "combat") {
+    if (intensity < 0.3) {
+      return createGoblin(world, x, y, player, difficulty, intensity);
+    }
+
+    if (intensity < 0.6) {
+      const roll = rng();
+      if (enemyIndex === 0) {
+        return createGoblin(world, x, y, player, difficulty, intensity);
+      }
+      if (roll < 0.5) {
+        return createRotwoodArcher(world, x, y, player, difficulty, intensity);
+      }
+      return createBlightvinesSkulker(
+        world,
+        x,
+        y,
+        player,
+        difficulty,
+        intensity,
+      );
+    }
+
+    if (enemyIndex === 0) {
+      return createThornbackGuardian(
+        world,
+        x,
+        y,
+        player,
+        difficulty,
+        intensity,
+      );
+    }
+    if (enemyIndex === 1) {
+      return createRotwoodArcher(world, x, y, player, difficulty, intensity);
+    }
+    return createBlightvinesSkulker(world, x, y, player, difficulty, intensity);
+  }
+
+  return createGoblin(world, x, y, player, difficulty, intensity);
 }
 
 export function populateRooms(
@@ -204,6 +326,7 @@ export function populateRooms(
   rng: () => number = Math.random,
 ): { player: number } {
   let playerEntity = -1;
+  let enemyIndex = 0;
 
   for (const room of rooms) {
     for (const sp of room.spawnPoints) {
@@ -229,19 +352,26 @@ export function populateRooms(
               "debug",
             );
           } else {
-            const goblin = createGoblin(
+            const enemy = spawnEnemyByContext(
               world,
               sp.x,
               sp.y,
               playerEntity,
               config.difficulty,
               room.intensity,
+              room.tag,
+              enemyIndex,
+              rng,
+              room,
             );
+            const renderable = world.getComponent(enemy, "Renderable");
+            const ai = world.getComponent(enemy, "AIControlled");
             messages?.add(
-              `[spawn] g#${goblin} at (${sp.x},${sp.y}) [charger, intensity=${room.intensity.toFixed(2)}]`,
+              `[spawn] ${renderable?.char ?? "?"}#${enemy} at (${sp.x},${sp.y}) [${ai?.pattern ?? "?"}, intensity=${room.intensity.toFixed(2)}]`,
               "debug",
             );
           }
+          enemyIndex++;
           break;
         }
         case "item": {

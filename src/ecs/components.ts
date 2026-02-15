@@ -33,8 +33,10 @@ export interface TurnActor {
 }
 
 export interface AIControlled {
-  pattern: "charger";
+  pattern: "charger" | "archer" | "guardian" | "skulker" | "patrol";
   targetEntity: number | null;
+  patrolPath?: { x: number; y: number }[];
+  patrolIndex?: number;
 }
 
 export interface Faction {
