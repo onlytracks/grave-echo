@@ -7,9 +7,8 @@
     "ui",
     "bugfix"
   ],
-  "status": "pending",
-  "created_at": "2026-02-15T05:38:25.697Z",
-  "assigned_to_session": "69d4f6de-59fb-4a43-b81f-b98043526d0e"
+  "status": "done",
+  "created_at": "2026-02-15T05:38:25.697Z"
 }
 
 ## Goal

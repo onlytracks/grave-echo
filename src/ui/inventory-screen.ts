@@ -106,6 +106,12 @@ export function renderInventoryScreen(
   const boxX = region.x + Math.floor((region.width - boxW) / 2);
   const boxY = region.y + Math.floor((region.height - boxH) / 2);
 
+  for (let y = boxY; y < boxY + boxH; y++) {
+    for (let x = boxX; x < boxX + boxW; x++) {
+      renderer.drawCell(x, y, " ", "white", "black");
+    }
+  }
+
   renderer.drawBox(boxX, boxY, boxW, boxH, "Inventory");
 
   const cx = boxX + 2;
