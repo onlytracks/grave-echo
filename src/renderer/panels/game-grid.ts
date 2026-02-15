@@ -26,13 +26,15 @@ export function renderGameGrid(
       const mapX = viewport.x + dx;
       const mapY = viewport.y + dy;
       const tile = map.getTile(mapX, mapY);
-      renderer.drawCell(
-        innerX + dx,
-        innerY + dy,
-        tile.char,
-        tile.fg as Color,
-        tile.bg as Color,
-      );
+      if (tile) {
+        renderer.drawCell(
+          innerX + dx,
+          innerY + dy,
+          tile.char,
+          tile.fg as Color,
+          tile.bg as Color,
+        );
+      }
     }
   }
 
