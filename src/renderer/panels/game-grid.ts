@@ -1,6 +1,7 @@
 import type { Color, Renderer } from "../renderer.ts";
 import type { World, Entity } from "../../ecs/world.ts";
 import type { GameMap } from "../../map/game-map.ts";
+import { computeVisibleTiles } from "../../ecs/systems/sensory.ts";
 
 function entityPriority(world: World, entity: Entity): number {
   if (world.hasComponent(entity, "PlayerControlled")) return 3;
@@ -12,37 +13,6 @@ function entityPriority(world: World, entity: Entity): number {
 export interface Viewport {
   x: number;
   y: number;
-}
-
-function getLosTiles(
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-): { x: number; y: number }[] {
-  const tiles: { x: number; y: number }[] = [];
-  let dx = Math.abs(x1 - x0);
-  let dy = Math.abs(y1 - y0);
-  const sx = x0 < x1 ? 1 : -1;
-  const sy = y0 < y1 ? 1 : -1;
-  let err = dx - dy;
-  let cx = x0;
-  let cy = y0;
-
-  while (cx !== x1 || cy !== y1) {
-    const e2 = 2 * err;
-    if (e2 > -dy) {
-      err -= dy;
-      cx += sx;
-    }
-    if (e2 < dx) {
-      err += dx;
-      cy += sy;
-    }
-    if (cx === x1 && cy === y1) break;
-    tiles.push({ x: cx, y: cy });
-  }
-  return tiles;
 }
 
 export function renderGameGrid(
@@ -61,6 +31,20 @@ export function renderGameGrid(
   const innerW = region.width - 2;
   const innerH = region.height - 2;
 
+  let targetVision: Set<string> | null = null;
+  if (targetEntity != null) {
+    const targetPos = world.getComponent(targetEntity, "Position");
+    const targetSenses = world.getComponent(targetEntity, "Senses");
+    if (targetPos && targetSenses) {
+      targetVision = computeVisibleTiles(
+        map,
+        targetPos.x,
+        targetPos.y,
+        targetSenses.vision.range,
+      );
+    }
+  }
+
   for (let dy = 0; dy < innerH; dy++) {
     for (let dx = 0; dx < innerW; dx++) {
       const mapX = viewport.x + dx;
@@ -70,11 +54,13 @@ export function renderGameGrid(
       if (!tile) continue;
 
       if (visibleTiles.has(key)) {
+        const inTargetVision = targetVision?.has(key) ?? false;
+        const fg = tile.walkable && inTargetVision ? "red" : (tile.fg as Color);
         renderer.drawCell(
           innerX + dx,
           innerY + dy,
           tile.char,
-          tile.fg as Color,
+          fg,
           tile.bg as Color,
         );
       } else if (map.isExplored(mapX, mapY)) {
@@ -112,29 +98,6 @@ export function renderGameGrid(
         isTarget ? "brightWhite" : (rend.fg as Color),
         isTarget ? "red" : (rend.bg as Color),
       );
-    }
-  }
-
-  if (targetEntity !== null && targetEntity !== undefined) {
-    const playerEntities = world.query("PlayerControlled", "Position");
-    const targetPos = world.getComponent(targetEntity, "Position");
-    if (playerEntities.length > 0 && targetPos) {
-      const playerPos = world.getComponent(playerEntities[0]!, "Position")!;
-      const losTiles = getLosTiles(
-        playerPos.x,
-        playerPos.y,
-        targetPos.x,
-        targetPos.y,
-      );
-      for (const tile of losTiles) {
-        const sx = tile.x - viewport.x;
-        const sy = tile.y - viewport.y;
-        if (sx >= 0 && sx < innerW && sy >= 0 && sy < innerH) {
-          const mapTile = map.getTile(tile.x, tile.y);
-          const ch = mapTile?.char ?? "·";
-          renderer.drawCell(innerX + sx, innerY + sy, ch, "darkGray", "red");
-        }
-      }
     }
   }
 }
