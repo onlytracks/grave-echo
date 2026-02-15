@@ -46,6 +46,10 @@ export function renderPlayerStats(
     }
   }
 
+  if (world.hasComponent(pid, "Defending")) {
+    line("[DEFENDING]", "brightCyan");
+  }
+
   if (health) {
     const ratio = health.max > 0 ? health.current / health.max : 0;
     const barWidth = Math.max(1, maxW - 14);

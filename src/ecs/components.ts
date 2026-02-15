@@ -140,6 +140,8 @@ export interface TargetSelection {
   targetEntity: number | null;
 }
 
+export interface Defending {}
+
 export interface ComponentMap {
   Position: Position;
   Renderable: Renderable;
@@ -161,6 +163,7 @@ export interface ComponentMap {
   Senses: Senses;
   Awareness: Awareness;
   TargetSelection: TargetSelection;
+  Defending: Defending;
 }
 
 export type ComponentType = keyof ComponentMap;

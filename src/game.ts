@@ -280,6 +280,16 @@ export class Game {
       this.clearStaleTargets();
 
       if (event.type === "pass") {
+        const player = this.getPlayerEntity();
+        if (player) {
+          const turnActor = this.world.getComponent(player, "TurnActor");
+          if (turnActor && !turnActor.hasActed) {
+            this.world.addComponent(player, "Defending", {});
+            this.messages.add(
+              "You brace for attack. (+2 defense, counterattack ready)",
+            );
+          }
+        }
         endPlayerTurn(this.world, this.messages);
       } else {
         handlePlayerInput(

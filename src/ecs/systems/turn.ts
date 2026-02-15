@@ -21,6 +21,7 @@ function getEffectiveSpeed(world: World, entity: Entity): number {
 export function startPlayerTurn(world: World, messages?: MessageLog): void {
   const players = world.query("PlayerControlled", "TurnActor", "Stats");
   for (const player of players) {
+    world.removeComponent(player, "Defending");
     const turnActor = world.getComponent(player, "TurnActor")!;
     const speed = getEffectiveSpeed(world, player);
     const penalty = getEncumbrancePenalty(world, player);
@@ -78,6 +79,7 @@ export function getAIEntities(world: World): Entity[] {
 
 export function resetAITurns(world: World, messages?: MessageLog): void {
   for (const entity of getAIEntities(world)) {
+    world.removeComponent(entity, "Defending");
     const turnActor = world.getComponent(entity, "TurnActor")!;
     const speed = getEffectiveSpeed(world, entity);
     turnActor.hasActed = false;

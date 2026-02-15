@@ -12,7 +12,7 @@ export function isHostile(world: World, a: Entity, b: Entity): boolean {
   return factionA.factionId !== factionB.factionId;
 }
 
-export function attack(
+export function performAttackDamage(
   world: World,
   attacker: Entity,
   defender: Entity,
@@ -62,6 +62,34 @@ export function attack(
     `[combat] ${atkName}[hp=${atkHp} str=${attackerStats.strength} def=${attackerStats.defense} spd=${attackerStats.speed}] → ${defName}[hp=${defHp} str=${defenderStats.strength} def=${defenderStats.defense} spd=${defenderStats.speed}] | dmg=${damage}${isCrit ? " crit" : ""} (base=${baseDamage} totalDef=${totalDefense} var=${variance}) hp: ${hpBefore}→${defenderHealth.current}`,
     "debug",
   );
+}
+
+export function attack(
+  world: World,
+  attacker: Entity,
+  defender: Entity,
+  messages: MessageLog,
+  rng: () => number = Math.random,
+): void {
+  if (world.hasComponent(defender, "Defending")) {
+    const attackerPos = world.getComponent(attacker, "Position");
+    const defenderPos = world.getComponent(defender, "Position");
+    if (attackerPos && defenderPos) {
+      const dist =
+        Math.abs(attackerPos.x - defenderPos.x) +
+        Math.abs(attackerPos.y - defenderPos.y);
+      if (dist <= 1) {
+        world.removeComponent(defender, "Defending");
+        const defenderDisplay = getDisplayName(world, defender);
+        messages.add(`${defenderDisplay} counterattack!`);
+        performAttackDamage(world, defender, attacker, messages, rng);
+        const attackerHealth = world.getComponent(attacker, "Health");
+        if (attackerHealth && attackerHealth.current <= 0) return;
+      }
+    }
+  }
+
+  performAttackDamage(world, attacker, defender, messages, rng);
 
   const turnActor = world.getComponent(attacker, "TurnActor");
   if (turnActor) {

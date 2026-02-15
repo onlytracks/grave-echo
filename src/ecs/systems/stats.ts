@@ -57,6 +57,10 @@ export function getEffectiveStats(
     }
   }
 
+  if (world.hasComponent(entity, "Defending")) {
+    def += 2;
+  }
+
   return { strength: str, defense: def, speed: Math.max(0, spd) };
 }
 
