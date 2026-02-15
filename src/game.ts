@@ -1,4 +1,4 @@
-import type { World } from "./ecs/world.ts";
+import { World } from "./ecs/world.ts";
 import type { GameMap } from "./map/game-map.ts";
 import type { Renderer } from "./renderer/renderer.ts";
 import { calculateLayout } from "./renderer/layout.ts";
@@ -21,42 +21,74 @@ import { processHealth } from "./ecs/systems/health.ts";
 import { MessageLog } from "./ecs/systems/messages.ts";
 import { waitForInput } from "./input/input-handler.ts";
 import { computePlayerFOW } from "./ecs/systems/sensory.ts";
+import { generateDungeon } from "./map/dungeon-generator.ts";
+import { populateRooms, type PopulatorConfig } from "./map/room-populator.ts";
 
-export enum GameState {
-  Gameplay,
-  Quitting,
+enum GameState {
+  Running,
   Dead,
+  Quit,
 }
 
 export class Game {
-  state = GameState.Gameplay;
+  private state = GameState.Running;
+  private world!: World;
+  private map!: GameMap;
   private messages: MessageLog;
   private visibleTiles = new Set<string>();
   private debugVisible = false;
   private turnCounter = 0;
+  private killCount = 0;
 
   constructor(
-    private world: World,
-    private map: GameMap,
     private renderer: Renderer,
-    messages?: MessageLog,
+    private populatorConfig: PopulatorConfig,
   ) {
-    this.messages = messages ?? new MessageLog();
+    this.messages = new MessageLog();
   }
 
   async run(): Promise<void> {
+    while (true) {
+      this.initNewRun();
+      await this.playUntilDeath();
+      if (this.state === GameState.Quit) break;
+      const action = await this.showGameOver();
+      if (action === "quit") break;
+    }
+  }
+
+  private initNewRun(): void {
+    this.world = new World();
+    const { map, rooms } = generateDungeon();
+    this.map = map;
+    this.messages = new MessageLog();
+    this.state = GameState.Running;
     this.turnCounter = 1;
+    this.killCount = 0;
+    this.visibleTiles = new Set<string>();
+
+    this.messages.add(
+      `[spawn] Dungeon generated: ${rooms.length} rooms, ${map.width}x${map.height}`,
+      "debug",
+    );
+    const tagSummary = rooms.map((r, i) => `${i}:${r.tag}`).join(", ");
+    this.messages.add(`[spawn] Room tags: ${tagSummary}`, "debug");
+
+    populateRooms(this.world, rooms, this.populatorConfig, this.messages);
+
     this.messages.setTurn(this.turnCounter);
     this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");
     startPlayerTurn(this.world, this.messages);
     this.visibleTiles = computePlayerFOW(this.world, this.map, this.messages);
+  }
 
-    while (this.state === GameState.Gameplay) {
+  private async playUntilDeath(): Promise<void> {
+    while (this.state === GameState.Running) {
       this.render();
       const event = await waitForInput();
 
       if (event.type === "quit") {
-        this.state = GameState.Quitting;
+        this.state = GameState.Quit;
         break;
       }
 
@@ -78,6 +110,7 @@ export class Game {
       }
 
       const healthResult = processHealth(this.world, this.messages);
+      this.killCount += healthResult.enemiesKilled;
       if (healthResult.playerDied) {
         this.state = GameState.Dead;
         break;
@@ -87,6 +120,7 @@ export class Game {
         resetAITurns(this.world, this.messages);
         processAI(this.world, this.map, this.messages);
         const aiHealthResult = processHealth(this.world, this.messages);
+        this.killCount += aiHealthResult.enemiesKilled;
         if (aiHealthResult.playerDied) {
           this.state = GameState.Dead;
           break;
@@ -102,19 +136,51 @@ export class Game {
         );
       }
     }
+  }
 
-    if (this.state === GameState.Dead) {
-      this.render();
-      const size = this.renderer.getScreenSize();
-      const layout = calculateLayout(size.width, size.height);
-      this.renderer.drawText(
-        layout.messageLog.x + 2,
-        layout.messageLog.y + layout.messageLog.height - 2,
-        "You died. Press any key to quit.",
-        "red",
-      );
-      this.renderer.flush();
-      await waitForInput();
+  private async showGameOver(): Promise<"restart" | "quit"> {
+    this.render();
+
+    const size = this.renderer.getScreenSize();
+    const layout = calculateLayout(size.width, size.height);
+    const r = layout.messageLog;
+
+    const boxW = Math.min(32, r.width - 2);
+    const boxX = r.x + Math.floor((r.width - boxW) / 2);
+    const boxY = r.y + 1;
+    const boxH = 9;
+
+    this.renderer.drawBox(boxX, boxY, boxW, boxH);
+
+    const cx = boxX + 2;
+    const innerW = boxW - 4;
+    const title = "YOU HAVE DIED";
+    const titlePad = Math.floor((innerW - title.length) / 2);
+
+    this.renderer.drawText(cx + titlePad, boxY + 1, title, "red");
+
+    const turnsLabel = `Turns survived: ${this.turnCounter}`;
+    this.renderer.drawText(cx, boxY + 3, turnsLabel, "white");
+
+    const killsLabel = `Enemies slain:  ${this.killCount}`;
+    this.renderer.drawText(cx, boxY + 4, killsLabel, "white");
+
+    this.renderer.drawText(cx, boxY + 6, "[Enter] Try Again", "green");
+    this.renderer.drawText(cx, boxY + 7, "[Q]     Quit", "gray");
+
+    this.renderer.flush();
+
+    while (true) {
+      const event = await waitForInput();
+      if (event.type === "quit") return "quit";
+      if (event.type === "unknown") {
+        // waitForInput returns "unknown" for Enter key — check raw
+        // Enter is handled below via pass-through
+      }
+      // Enter key is parsed as "unknown" since 0x0d isn't mapped
+      // We need to accept it. The simplest: treat any non-quit key as restart
+      // except for specific quit keys (q/ESC already return "quit")
+      return "restart";
     }
   }
 

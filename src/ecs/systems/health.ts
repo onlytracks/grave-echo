@@ -3,6 +3,7 @@ import type { MessageLog } from "./messages.ts";
 
 export interface HealthResult {
   playerDied: boolean;
+  enemiesKilled: number;
 }
 
 export function processHealth(
@@ -10,6 +11,7 @@ export function processHealth(
   messages: MessageLog,
 ): HealthResult {
   let playerDied = false;
+  let enemiesKilled = 0;
   const entities = world.query("Health");
 
   for (const entity of entities) {
@@ -23,10 +25,13 @@ export function processHealth(
         const renderable = world.getComponent(entity, "Renderable");
         const name = renderable ? `The ${renderable.char}` : "Something";
         messages.add(`${name} dies!`);
+        if (world.hasComponent(entity, "AIControlled")) {
+          enemiesKilled++;
+        }
       }
       world.destroyEntity(entity);
     }
   }
 
-  return { playerDied };
+  return { playerDied, enemiesKilled };
 }
