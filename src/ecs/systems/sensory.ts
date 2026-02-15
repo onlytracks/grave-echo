@@ -138,47 +138,59 @@ export function updateAwareness(
 export function updatePlayerAwareness(
   world: World,
   map: GameMap,
-  visible: Set<string>,
+  _visible: Set<string>,
   messages?: MessageLog,
 ): void {
-  const players = world.query("PlayerControlled", "Awareness");
+  const players = world.query("PlayerControlled", "Awareness", "Position");
   if (players.length === 0) return;
 
   const player = players[0]!;
+  const playerPos = world.getComponent(player, "Position")!;
   const awareness = world.getComponent(player, "Awareness")!;
   const prevState = awareness.state;
 
-  const entities = world.query("Position", "Faction", "Awareness");
-  let anyAlert = false;
-  let alertEntity: Entity | null = null;
+  const enemies = world.query("Position", "Faction", "Senses");
+  let anyThreat = false;
+  let threatEntity: Entity | null = null;
+  let threatDist = 0;
 
-  for (const entity of entities) {
+  for (const entity of enemies) {
     if (entity === player) continue;
     const faction = world.getComponent(entity, "Faction")!;
     if (faction.factionId === "player" || faction.factionId === "neutral")
       continue;
-    const entityAwareness = world.getComponent(entity, "Awareness")!;
-    if (entityAwareness.state !== "alert") continue;
+
     const entityPos = world.getComponent(entity, "Position")!;
-    if (visible.has(`${entityPos.x},${entityPos.y}`)) {
-      anyAlert = true;
-      alertEntity = entity;
-      break;
-    }
+    const entitySenses = world.getComponent(entity, "Senses")!;
+
+    const dist =
+      Math.abs(entityPos.x - playerPos.x) + Math.abs(entityPos.y - playerPos.y);
+    if (dist > entitySenses.vision.range) continue;
+    if (
+      !hasLineOfSight(map, entityPos.x, entityPos.y, playerPos.x, playerPos.y)
+    )
+      continue;
+
+    anyThreat = true;
+    threatEntity = entity;
+    threatDist = dist;
+    break;
   }
 
-  awareness.state = anyAlert ? "alert" : "idle";
+  awareness.state = anyThreat ? "alert" : "idle";
 
   if (messages && awareness.state !== prevState) {
-    if (awareness.state === "alert" && alertEntity !== null) {
-      const name = entityName(world, alertEntity);
+    if (awareness.state === "alert" && threatEntity !== null) {
+      const name = entityName(world, threatEntity);
+      messages.add("You sense danger nearby!");
       messages.add(
-        `[sense] Player: idle → alert (sees alert ${name})`,
+        `[sense] Player: idle → alert (${name} sensing at d=${threatDist})`,
         "debug",
       );
     } else if (awareness.state === "idle") {
+      messages.add("The threat has passed.");
       messages.add(
-        `[sense] Player: alert → idle (no threats visible)`,
+        `[sense] Player: alert → idle (no enemies sensing you)`,
         "debug",
       );
     }
