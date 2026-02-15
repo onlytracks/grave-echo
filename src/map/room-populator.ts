@@ -121,6 +121,7 @@ function createGoblin(
   player: number,
   difficulty: number,
   intensity: number = 0,
+  rng: () => number = Math.random,
 ): number {
   const scale = 1 + intensity * 0.5;
   const hp = Math.floor((8 + difficulty * 1.5) * scale);
@@ -178,6 +179,14 @@ function createGoblin(
   if (itemComp) inv.totalWeight += itemComp.weight;
   equip.weapon = weapon;
 
+  if (rng() < 0.3) {
+    const potion = createHealingPotion(world, 0, 0);
+    world.removeComponent(potion, "Position");
+    inv.items.push(potion);
+    const potionItem = world.getComponent(potion, "Item");
+    if (potionItem) inv.totalWeight += potionItem.weight;
+  }
+
   return goblin;
 }
 
@@ -188,6 +197,7 @@ function createBoss(
   player: number,
   difficulty: number,
   intensity: number = 1,
+  _rng: () => number = Math.random,
 ): number {
   const scale = 1 + intensity * 0.5;
   const hp = Math.floor((20 + difficulty * 3) * scale);
@@ -241,6 +251,12 @@ function createBoss(
   if (itemComp) inv.totalWeight += itemComp.weight;
   equip.weapon = weapon;
 
+  const potion = createHealingPotion(world, 0, 0);
+  world.removeComponent(potion, "Position");
+  inv.items.push(potion);
+  const potionItem = world.getComponent(potion, "Item");
+  if (potionItem) inv.totalWeight += potionItem.weight;
+
   return boss;
 }
 
@@ -273,21 +289,38 @@ function spawnEnemyByContext(
 
   if (tag === "transition") {
     const path = generatePatrolPath(room);
-    return createHollowPatrol(world, x, y, player, difficulty, intensity, path);
+    return createHollowPatrol(
+      world,
+      x,
+      y,
+      player,
+      difficulty,
+      intensity,
+      path,
+      rng,
+    );
   }
 
   if (tag === "combat") {
     if (intensity < 0.3) {
-      return createGoblin(world, x, y, player, difficulty, intensity);
+      return createGoblin(world, x, y, player, difficulty, intensity, rng);
     }
 
     if (intensity < 0.6) {
       const roll = rng();
       if (enemyIndex === 0) {
-        return createGoblin(world, x, y, player, difficulty, intensity);
+        return createGoblin(world, x, y, player, difficulty, intensity, rng);
       }
       if (roll < 0.5) {
-        return createRotwoodArcher(world, x, y, player, difficulty, intensity);
+        return createRotwoodArcher(
+          world,
+          x,
+          y,
+          player,
+          difficulty,
+          intensity,
+          rng,
+        );
       }
       return createBlightvinesSkulker(
         world,
@@ -296,6 +329,7 @@ function spawnEnemyByContext(
         player,
         difficulty,
         intensity,
+        rng,
       );
     }
 
@@ -310,12 +344,28 @@ function spawnEnemyByContext(
       );
     }
     if (enemyIndex === 1) {
-      return createRotwoodArcher(world, x, y, player, difficulty, intensity);
+      return createRotwoodArcher(
+        world,
+        x,
+        y,
+        player,
+        difficulty,
+        intensity,
+        rng,
+      );
     }
-    return createBlightvinesSkulker(world, x, y, player, difficulty, intensity);
+    return createBlightvinesSkulker(
+      world,
+      x,
+      y,
+      player,
+      difficulty,
+      intensity,
+      rng,
+    );
   }
 
-  return createGoblin(world, x, y, player, difficulty, intensity);
+  return createGoblin(world, x, y, player, difficulty, intensity, rng);
 }
 
 export function populateRooms(
@@ -346,6 +396,7 @@ export function populateRooms(
               playerEntity,
               config.difficulty,
               room.intensity,
+              rng,
             );
             messages?.add(
               `[spawn] G#${boss} at (${sp.x},${sp.y}) [boss, intensity=${room.intensity.toFixed(2)}]`,

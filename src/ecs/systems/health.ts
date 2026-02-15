@@ -45,6 +45,7 @@ function shouldDrop(
   equipment: Equipment | null,
   rng: () => number,
 ): boolean {
+  if (world.hasComponent(itemId, "Consumable")) return true;
   if (equipment?.weapon === itemId) return true;
   if (equipment?.armor === itemId) return rng() < 0.75;
   if (equipment?.accessory1 === itemId || equipment?.accessory2 === itemId)

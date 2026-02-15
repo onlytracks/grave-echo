@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { World } from "../../world.ts";
 import { MessageLog } from "../messages.ts";
 import { processHealth } from "../health.ts";
+import { createHealingPotion } from "../../../items/item-factory.ts";
 
 function createEnemy(world: World, x: number, y: number) {
   const enemy = world.createEntity();
@@ -282,5 +283,40 @@ describe("enemy loot drops on death", () => {
     const armorPos = world.getComponent(armor, "Position");
     expect(weaponPos).toEqual({ x: 4, y: 6 });
     expect(armorPos).toEqual({ x: 4, y: 6 });
+  });
+
+  test("consumables always drop regardless of rng", () => {
+    const world = new World();
+    const messages = new MessageLog();
+    const enemy = createEnemy(world, 3, 3);
+    const potion = createHealingPotion(world, 0, 0);
+    world.removeComponent(potion, "Position");
+    const inv = world.getComponent(enemy, "Inventory")!;
+    inv.items.push(potion);
+    const item = world.getComponent(potion, "Item")!;
+    inv.totalWeight += item.weight;
+
+    processHealth(world, messages, () => 1.0);
+
+    const pos = world.getComponent(potion, "Position");
+    expect(pos).toBeDefined();
+    expect(pos!.x).toBe(3);
+    expect(pos!.y).toBe(3);
+  });
+
+  test("dropped consumable retains full charges", () => {
+    const world = new World();
+    const messages = new MessageLog();
+    const enemy = createEnemy(world, 5, 5);
+    const potion = createHealingPotion(world, 0, 0);
+    world.removeComponent(potion, "Position");
+    const inv = world.getComponent(enemy, "Inventory")!;
+    inv.items.push(potion);
+
+    processHealth(world, messages);
+
+    const consumable = world.getComponent(potion, "Consumable");
+    expect(consumable).toBeDefined();
+    expect(consumable!.charges).toBe(consumable!.maxCharges);
   });
 });

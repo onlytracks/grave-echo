@@ -6,6 +6,7 @@ import {
   createChainmail,
   createIronSword,
   createSwordAndShield,
+  createHealingPotion,
 } from "../items/item-factory.ts";
 
 interface EnemyConfig {
@@ -34,6 +35,15 @@ function equipArmor(world: World, enemy: number, armorId: number): void {
   const item = world.getComponent(armorId, "Item");
   if (item) inventory.totalWeight += item.weight;
   equipment.armor = armorId;
+}
+
+function givePotion(world: World, enemy: number): void {
+  const potion = createHealingPotion(world, 0, 0);
+  world.removeComponent(potion, "Position");
+  const inventory = world.getComponent(enemy, "Inventory")!;
+  inventory.items.push(potion);
+  const item = world.getComponent(potion, "Item");
+  if (item) inventory.totalWeight += item.weight;
 }
 
 function createBaseEnemy(
@@ -106,6 +116,7 @@ export function createRotwoodArcher(
   player: number,
   difficulty: number,
   intensity: number = 0,
+  rng: () => number = Math.random,
 ): number {
   const entity = createBaseEnemy(
     world,
@@ -125,6 +136,8 @@ export function createRotwoodArcher(
 
   const bow = createShortBow(world, 0, 0);
   equipWeapon(world, entity, bow);
+
+  if (rng() < 0.25) givePotion(world, entity);
 
   return entity;
 }
@@ -159,6 +172,8 @@ export function createThornbackGuardian(
   const armor = createChainmail(world, 0, 0);
   equipArmor(world, entity, armor);
 
+  givePotion(world, entity);
+
   return entity;
 }
 
@@ -169,6 +184,7 @@ export function createBlightvinesSkulker(
   player: number,
   difficulty: number,
   intensity: number = 0,
+  rng: () => number = Math.random,
 ): number {
   const entity = createBaseEnemy(
     world,
@@ -189,6 +205,8 @@ export function createBlightvinesSkulker(
   const sword = createIronSword(world, 0, 0);
   equipWeapon(world, entity, sword);
 
+  if (rng() < 0.25) givePotion(world, entity);
+
   return entity;
 }
 
@@ -200,6 +218,7 @@ export function createHollowPatrol(
   difficulty: number,
   intensity: number = 0,
   patrolPath?: { x: number; y: number }[],
+  rng: () => number = Math.random,
 ): number {
   const entity = createBaseEnemy(
     world,
@@ -224,6 +243,8 @@ export function createHollowPatrol(
 
   const weapon = createSwordAndShield(world, 0, 0);
   equipWeapon(world, entity, weapon);
+
+  if (rng() < 0.3) givePotion(world, entity);
 
   return entity;
 }

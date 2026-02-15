@@ -7,7 +7,7 @@
     "enemies",
     "loot"
   ],
-  "status": "open",
+  "status": "done",
   "created_at": "2026-02-15T22:41:41.392Z"
 }
 
