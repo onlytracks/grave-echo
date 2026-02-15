@@ -7,7 +7,7 @@
     "combat",
     "items"
   ],
-  "status": "pending",
+  "status": "done",
   "created_at": "2026-02-15T06:17:47.312Z"
 }
 

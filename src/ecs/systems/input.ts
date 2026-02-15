@@ -48,6 +48,9 @@ export function handlePlayerInput(
       pos.y + delta.dy,
       messages,
     );
+    if (result === "moved" && messages) {
+      announceItemsAtFeet(world, player, messages);
+    }
     return result !== "blocked";
   }
 
@@ -79,4 +82,27 @@ export function handlePlayerInput(
   }
 
   return false;
+}
+
+function announceItemsAtFeet(
+  world: World,
+  player: number,
+  messages: MessageLog,
+): void {
+  const pos = world.getComponent(player, "Position");
+  if (!pos) return;
+
+  const itemEntities = world.query("Position", "Item");
+  const names: string[] = [];
+  for (const id of itemEntities) {
+    const p = world.getComponent(id, "Position")!;
+    if (p.x === pos.x && p.y === pos.y) {
+      const item = world.getComponent(id, "Item")!;
+      names.push(item.name);
+    }
+  }
+
+  if (names.length > 0) {
+    messages.add(`You see: ${names.join(", ")} here.`);
+  }
 }
