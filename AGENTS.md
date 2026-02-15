@@ -67,3 +67,4 @@ Test in the game before committing — some glyphs look different across fonts.
 - No `any`, no type assertions unless unavoidable
 - One responsibility per system
 - Test systems in isolation with minimal ECS worlds
+- When closing a todo that corresponds to completed work, stage the todo status change before committing — never commit code and close the todo separately
