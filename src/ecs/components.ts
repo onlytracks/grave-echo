@@ -36,6 +36,10 @@ export interface AIControlled {
   targetEntity: number | null;
 }
 
+export interface Faction {
+  factionId: "player" | "enemy" | "neutral";
+}
+
 export interface ComponentMap {
   Position: Position;
   Renderable: Renderable;
@@ -45,6 +49,7 @@ export interface ComponentMap {
   Stats: Stats;
   TurnActor: TurnActor;
   AIControlled: AIControlled;
+  Faction: Faction;
 }
 
 export type ComponentType = keyof ComponentMap;

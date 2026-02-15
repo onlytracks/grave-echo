@@ -24,6 +24,7 @@ function main(): void {
     hasActed: false,
     movementRemaining: 3,
   });
+  world.addComponent(player, "Faction", { factionId: "player" });
 
   const goblin = world.createEntity();
   world.addComponent(goblin, "Position", { x: 3, y: 3 });
@@ -43,6 +44,7 @@ function main(): void {
     targetEntity: player,
   });
   world.addComponent(goblin, "Collidable", { blocksMovement: true });
+  world.addComponent(goblin, "Faction", { factionId: "enemy" });
 
   enableRawMode();
   renderer.init();

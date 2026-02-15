@@ -1,6 +1,7 @@
 import type { World } from "../world.ts";
 import type { GameMap } from "../../map/game-map.ts";
 import type { InputEvent } from "../../input/input-handler.ts";
+import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
 
 const DIRECTION_DELTA = {
@@ -14,6 +15,7 @@ export function handlePlayerInput(
   world: World,
   map: GameMap,
   event: InputEvent,
+  messages?: MessageLog,
 ): boolean {
   if (event.type !== "move") return false;
 
@@ -24,5 +26,13 @@ export function handlePlayerInput(
   const pos = world.getComponent(player, "Position")!;
   const delta = DIRECTION_DELTA[event.direction];
 
-  return tryMove(world, map, player, pos.x + delta.dx, pos.y + delta.dy);
+  const result = tryMove(
+    world,
+    map,
+    player,
+    pos.x + delta.dx,
+    pos.y + delta.dy,
+    messages,
+  );
+  return result !== "blocked";
 }

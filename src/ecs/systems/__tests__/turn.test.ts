@@ -23,9 +23,9 @@ describe("Turn System", () => {
     const { world, map, player } = setupPlayerWorld();
     startPlayerTurn(world);
 
-    expect(tryMove(world, map, player, 6, 5)).toBe(true);
-    expect(tryMove(world, map, player, 7, 5)).toBe(true);
-    expect(tryMove(world, map, player, 8, 5)).toBe(true);
+    expect(tryMove(world, map, player, 6, 5)).toBe("moved");
+    expect(tryMove(world, map, player, 7, 5)).toBe("moved");
+    expect(tryMove(world, map, player, 8, 5)).toBe("moved");
     expect(world.getComponent(player, "TurnActor")!.movementRemaining).toBe(0);
   });
 
@@ -36,7 +36,7 @@ describe("Turn System", () => {
     tryMove(world, map, player, 6, 5);
     tryMove(world, map, player, 7, 5);
     tryMove(world, map, player, 8, 5);
-    expect(tryMove(world, map, player, 9, 5)).toBe(false);
+    expect(tryMove(world, map, player, 9, 5)).toBe("blocked");
     expect(world.getComponent(player, "Position")).toEqual({ x: 8, y: 5 });
   });
 

@@ -1,5 +1,9 @@
 import type { World, Entity } from "../world.ts";
 import type { GameMap } from "../../map/game-map.ts";
+import type { MessageLog } from "./messages.ts";
+import { isHostile, attack } from "./combat.ts";
+
+export type MoveResult = "moved" | "blocked" | "attacked";
 
 export function tryMove(
   world: World,
@@ -7,11 +11,12 @@ export function tryMove(
   entity: Entity,
   targetX: number,
   targetY: number,
-): boolean {
+  messages?: MessageLog,
+): MoveResult {
   const turnActor = world.getComponent(entity, "TurnActor");
-  if (turnActor && turnActor.movementRemaining <= 0) return false;
+  if (turnActor && turnActor.movementRemaining <= 0) return "blocked";
 
-  if (!map.isWalkable(targetX, targetY)) return false;
+  if (!map.isWalkable(targetX, targetY)) return "blocked";
 
   const blockers = world.query("Position", "Collidable");
   for (const other of blockers) {
@@ -19,7 +24,11 @@ export function tryMove(
     const pos = world.getComponent(other, "Position")!;
     const col = world.getComponent(other, "Collidable")!;
     if (col.blocksMovement && pos.x === targetX && pos.y === targetY) {
-      return false;
+      if (messages && isHostile(world, entity, other)) {
+        attack(world, entity, other, messages);
+        return "attacked";
+      }
+      return "blocked";
     }
   }
 
@@ -29,5 +38,5 @@ export function tryMove(
     position.y = targetY;
     if (turnActor) turnActor.movementRemaining--;
   }
-  return true;
+  return "moved";
 }

@@ -5,7 +5,6 @@ import { tryMove } from "../movement.ts";
 
 function makeTestMap(): GameMap {
   const map = new GameMap(5, 5, FLOOR_TILE);
-  // Wall at (2, 0)
   map.setTile(2, 0, { ...WALL_TILE });
   return map;
 }
@@ -17,8 +16,8 @@ describe("tryMove", () => {
     const e = world.createEntity();
     world.addComponent(e, "Position", { x: 1, y: 1 });
 
-    const moved = tryMove(world, map, e, 2, 1);
-    expect(moved).toBe(true);
+    const result = tryMove(world, map, e, 2, 1);
+    expect(result).toBe("moved");
     expect(world.getComponent(e, "Position")).toEqual({ x: 2, y: 1 });
   });
 
@@ -28,8 +27,8 @@ describe("tryMove", () => {
     const e = world.createEntity();
     world.addComponent(e, "Position", { x: 2, y: 1 });
 
-    const moved = tryMove(world, map, e, 2, 0);
-    expect(moved).toBe(false);
+    const result = tryMove(world, map, e, 2, 0);
+    expect(result).toBe("blocked");
     expect(world.getComponent(e, "Position")).toEqual({ x: 2, y: 1 });
   });
 
@@ -39,8 +38,8 @@ describe("tryMove", () => {
     const e = world.createEntity();
     world.addComponent(e, "Position", { x: 0, y: 0 });
 
-    const moved = tryMove(world, map, e, -1, 0);
-    expect(moved).toBe(false);
+    const result = tryMove(world, map, e, -1, 0);
+    expect(result).toBe("blocked");
     expect(world.getComponent(e, "Position")).toEqual({ x: 0, y: 0 });
   });
 
@@ -54,8 +53,8 @@ describe("tryMove", () => {
     world.addComponent(blocker, "Position", { x: 2, y: 1 });
     world.addComponent(blocker, "Collidable", { blocksMovement: true });
 
-    const moved = tryMove(world, map, e, 2, 1);
-    expect(moved).toBe(false);
+    const result = tryMove(world, map, e, 2, 1);
+    expect(result).toBe("blocked");
     expect(world.getComponent(e, "Position")).toEqual({ x: 1, y: 1 });
   });
 
@@ -69,8 +68,8 @@ describe("tryMove", () => {
     world.addComponent(item, "Position", { x: 2, y: 1 });
     world.addComponent(item, "Collidable", { blocksMovement: false });
 
-    const moved = tryMove(world, map, e, 2, 1);
-    expect(moved).toBe(true);
+    const result = tryMove(world, map, e, 2, 1);
+    expect(result).toBe("moved");
     expect(world.getComponent(e, "Position")).toEqual({ x: 2, y: 1 });
   });
 });

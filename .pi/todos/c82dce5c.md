@@ -6,7 +6,7 @@
     "combat",
     "systems"
   ],
-  "status": "pending",
+  "status": "done",
   "created_at": "2026-02-14T23:00:39.752Z"
 }
 
