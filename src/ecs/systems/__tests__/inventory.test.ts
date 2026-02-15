@@ -30,7 +30,12 @@ function setupWorld() {
     totalWeight: 0,
     carryCapacity: 30,
   });
-  world.addComponent(player, "Equipment", { weapon: null });
+  world.addComponent(player, "Equipment", {
+    weapon: null,
+    armor: null,
+    accessory1: null,
+    accessory2: null,
+  });
 
   return { world, messages, player };
 }
@@ -44,7 +49,13 @@ function createSword(world: World, x: number, y: number): number {
     weight: 6,
     rarity: "common",
   });
-  world.addComponent(e, "Weapon", { damage: 5, range: 1, weaponType: "sword" });
+  world.addComponent(e, "Weapon", {
+    damage: 5,
+    range: 1,
+    weaponType: "sword",
+    attackType: "melee",
+    defenseBonus: 0,
+  });
   return e;
 }
 
@@ -57,7 +68,13 @@ function createBow(world: World, x: number, y: number): number {
     weight: 4,
     rarity: "common",
   });
-  world.addComponent(e, "Weapon", { damage: 3, range: 6, weaponType: "bow" });
+  world.addComponent(e, "Weapon", {
+    damage: 3,
+    range: 6,
+    weaponType: "bow",
+    attackType: "ranged",
+    defenseBonus: 0,
+  });
   return e;
 }
 
@@ -77,6 +94,7 @@ function createPotion(world: World, x: number, y: number): number {
   world.addComponent(e, "Consumable", {
     effectType: "heal",
     power: 8,
+    duration: 0,
     charges: 3,
     maxCharges: 3,
   });

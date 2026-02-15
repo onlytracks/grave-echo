@@ -47,17 +47,67 @@ export interface Item {
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
 }
 
+export type WeaponType =
+  | "sword"
+  | "axe"
+  | "mace"
+  | "spear"
+  | "halberd"
+  | "bow"
+  | "crossbow"
+  | "staff"
+  | "wand";
+
+export type AttackType = "melee" | "reach" | "ranged";
+
 export interface Weapon {
   damage: number;
   range: number;
-  weaponType: "sword" | "bow";
+  weaponType: WeaponType;
+  attackType: AttackType;
+  defenseBonus: number;
 }
 
+export type EffectType = "heal" | "speed" | "strength" | "defense";
+
 export interface Consumable {
-  effectType: "heal";
+  effectType: EffectType;
   power: number;
+  duration: number;
   charges: number;
   maxCharges: number;
+}
+
+export interface Armor {
+  defense: number;
+  speedPenalty: number;
+  armorType: "light" | "medium" | "heavy";
+}
+
+export interface StatBonus {
+  stat:
+    | "strength"
+    | "defense"
+    | "speed"
+    | "maxHealth"
+    | "critChance"
+    | "critDamage";
+  value: number;
+}
+
+export interface Accessory {
+  slot: "accessory";
+  bonuses: StatBonus[];
+}
+
+export interface ActiveBuff {
+  stat: "strength" | "defense" | "speed";
+  value: number;
+  turnsRemaining: number;
+}
+
+export interface Buffs {
+  active: ActiveBuff[];
 }
 
 export interface Inventory {
@@ -68,6 +118,9 @@ export interface Inventory {
 
 export interface Equipment {
   weapon: number | null;
+  armor: number | null;
+  accessory1: number | null;
+  accessory2: number | null;
 }
 
 export interface Senses {
@@ -94,6 +147,9 @@ export interface ComponentMap {
   Item: Item;
   Weapon: Weapon;
   Consumable: Consumable;
+  Armor: Armor;
+  Accessory: Accessory;
+  Buffs: Buffs;
   Inventory: Inventory;
   Equipment: Equipment;
   Senses: Senses;

@@ -1,6 +1,7 @@
 import type { Color, Renderer } from "../renderer.ts";
 import type { World } from "../../ecs/world.ts";
 import type { Region } from "../layout.ts";
+import { isEquipped } from "../../ecs/systems/inventory.ts";
 
 export function renderEquipment(
   renderer: Renderer,
@@ -36,14 +37,24 @@ export function renderEquipment(
   const equip = world.getComponent(pid, "Equipment");
   const inv = world.getComponent(pid, "Inventory");
 
-  const weaponName =
-    equip?.weapon !== null && equip?.weapon !== undefined
-      ? (world.getComponent(equip.weapon, "Item")?.name ?? "?")
-      : "---";
-  line(`Weapon: ${weaponName}`);
-  line("Armor:  ---", "gray");
-  line("Acc 1:  ---", "gray");
-  line("Acc 2:  ---", "gray");
+  const slotName = (entityId: number | null | undefined): string => {
+    if (entityId === null || entityId === undefined) return "---";
+    return world.getComponent(entityId, "Item")?.name ?? "?";
+  };
+
+  line(`Weapon: ${slotName(equip?.weapon)}`);
+  line(
+    `Armor:  ${slotName(equip?.armor)}`,
+    equip?.armor !== null ? "white" : "gray",
+  );
+  line(
+    `Acc 1:  ${slotName(equip?.accessory1)}`,
+    equip?.accessory1 !== null ? "cyan" : "gray",
+  );
+  line(
+    `Acc 2:  ${slotName(equip?.accessory2)}`,
+    equip?.accessory2 !== null ? "cyan" : "gray",
+  );
 
   if (inv && inv.items.length > 0) {
     row++;
@@ -51,13 +62,13 @@ export function renderEquipment(
     for (const itemId of inv.items) {
       const item = world.getComponent(itemId, "Item");
       if (!item) continue;
-      const isEquipped = equip?.weapon === itemId;
+      const equipped = isEquipped(world, pid, itemId);
       const consumable = world.getComponent(itemId, "Consumable");
       let label = `  ${item.name} (${item.weight} wt)`;
       if (consumable) {
         label = `  ${item.name} (${consumable.charges}/${consumable.maxCharges})`;
       }
-      line(label, isEquipped ? "cyan" : "white");
+      line(label, equipped ? "cyan" : "white");
     }
   }
 }

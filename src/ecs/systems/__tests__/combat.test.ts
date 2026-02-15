@@ -139,13 +139,20 @@ describe("Combat System", () => {
       damage: 10,
       range: 1,
       weaponType: "sword",
+      attackType: "melee",
+      defenseBonus: 0,
     });
     world.addComponent(attacker, "Inventory", {
       items: [sword],
       totalWeight: 6,
       carryCapacity: 30,
     });
-    world.addComponent(attacker, "Equipment", { weapon: sword });
+    world.addComponent(attacker, "Equipment", {
+      weapon: sword,
+      armor: null,
+      accessory1: null,
+      accessory2: null,
+    });
 
     // rng 0.5 → variance 0, no crit
     attack(world, attacker, defender, messages, () => 0.5);
@@ -155,7 +162,12 @@ describe("Combat System", () => {
 
   test("attack uses Stats.strength when no weapon equipped (unarmed)", () => {
     const { world, messages, attacker, defender } = setupCombat();
-    world.addComponent(attacker, "Equipment", { weapon: null });
+    world.addComponent(attacker, "Equipment", {
+      weapon: null,
+      armor: null,
+      accessory1: null,
+      accessory2: null,
+    });
 
     attack(world, attacker, defender, messages, () => 0.5);
     // strength 5 - defense 1 + 0 = 4

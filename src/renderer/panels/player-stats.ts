@@ -1,6 +1,7 @@
 import type { Color, Renderer } from "../renderer.ts";
 import type { World } from "../../ecs/world.ts";
 import type { Region } from "../layout.ts";
+import { getEffectiveStats } from "../../ecs/systems/stats.ts";
 
 export function renderPlayerStats(
   renderer: Renderer,
@@ -29,10 +30,12 @@ export function renderPlayerStats(
   const pid = players[0]!;
   const health = world.getComponent(pid, "Health");
   const stats = world.getComponent(pid, "Stats");
+  const effective = getEffectiveStats(world, pid);
   const turn = world.getComponent(pid, "TurnActor");
   const equip = world.getComponent(pid, "Equipment");
   const inv = world.getComponent(pid, "Inventory");
   const awareness = world.getComponent(pid, "Awareness");
+  const buffs = world.getComponent(pid, "Buffs");
 
   if (awareness) {
     if (awareness.state === "alert") {
@@ -62,7 +65,19 @@ export function renderPlayerStats(
     row++;
   }
 
-  if (stats) {
+  if (effective && stats) {
+    const strBonus = effective.strength - stats.strength;
+    const defBonus = effective.defense - stats.defense;
+    const spdBonus = effective.speed - stats.speed;
+    const fmtStat = (name: string, base: number, bonus: number) => {
+      if (bonus > 0) return `${name}: ${base}+${bonus}`;
+      if (bonus < 0) return `${name}: ${base}${bonus}`;
+      return `${name}: ${base}`;
+    };
+    line(
+      `${fmtStat("STR", stats.strength, strBonus)}  ${fmtStat("DEF", stats.defense, defBonus)}  ${fmtStat("SPD", stats.speed, spdBonus)}`,
+    );
+  } else if (stats) {
     line(`STR: ${stats.strength}  DEF: ${stats.defense}  SPD: ${stats.speed}`);
   }
 
@@ -75,9 +90,36 @@ export function renderPlayerStats(
     } else {
       line("Wpn: Fists");
     }
+
+    if (equip.armor !== null) {
+      const item = world.getComponent(equip.armor, "Item");
+      const armor = world.getComponent(equip.armor, "Armor");
+      const defText = armor ? ` (${armor.defense} def)` : "";
+      line(`Arm: ${item?.name ?? "?"}${defText}`);
+    }
+
+    const acc1Name =
+      equip.accessory1 !== null
+        ? (world.getComponent(equip.accessory1, "Item")?.name ?? "?")
+        : null;
+    const acc2Name =
+      equip.accessory2 !== null
+        ? (world.getComponent(equip.accessory2, "Item")?.name ?? "?")
+        : null;
+    if (acc1Name) line(`Acc: ${acc1Name}`, "cyan");
+    if (acc2Name) line(`Acc: ${acc2Name}`, "cyan");
   }
 
-  if (turn && stats) {
+  if (buffs && buffs.active.length > 0) {
+    const buffStrs = buffs.active.map(
+      (b) => `${b.stat[0]!.toUpperCase()}+${b.value}(${b.turnsRemaining}t)`,
+    );
+    line(`Buffs: ${buffStrs.join(" ")}`, "brightYellow");
+  }
+
+  if (turn && effective) {
+    line(`Moves: ${turn.movementRemaining}/${effective.speed}`);
+  } else if (turn && stats) {
     line(`Moves: ${turn.movementRemaining}/${stats.speed}`);
   }
 

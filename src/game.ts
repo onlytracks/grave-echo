@@ -9,6 +9,7 @@ import { renderTargetInfo } from "./renderer/panels/target-info.ts";
 import { renderMessageLog } from "./renderer/panels/message-log.ts";
 import { renderEquipment } from "./renderer/panels/equipment.ts";
 import { handlePlayerInput } from "./ecs/systems/input.ts";
+import { processBuffs } from "./ecs/systems/stats.ts";
 import {
   startPlayerTurn,
   endPlayerTurn,
@@ -206,6 +207,7 @@ export class Game {
           this.state = GameState.Dead;
           break;
         }
+        processBuffs(this.world);
         this.turnCounter++;
         this.messages.setTurn(this.turnCounter);
         this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");

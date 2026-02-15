@@ -3,7 +3,7 @@ import type { Renderer } from "../renderer/renderer.ts";
 import type { Region } from "../renderer/layout.ts";
 import type { InputEvent } from "../input/input-handler.ts";
 import type { MessageLog } from "../ecs/systems/messages.ts";
-import { drop, equip, unequip } from "../ecs/systems/inventory.ts";
+import { drop, equip, unequip, isEquipped } from "../ecs/systems/inventory.ts";
 
 export interface InventoryScreenState {
   cursorIndex: number;
@@ -51,6 +51,14 @@ export function handleInventoryInput(
   return "none";
 }
 
+function isEquippable(world: World, itemEntity: Entity): boolean {
+  return (
+    world.hasComponent(itemEntity, "Weapon") ||
+    world.hasComponent(itemEntity, "Armor") ||
+    world.hasComponent(itemEntity, "Accessory")
+  );
+}
+
 export function handleInventoryKey(
   world: World,
   player: Entity,
@@ -75,16 +83,14 @@ export function handleInventoryKey(
   // 'e' = 0x65 — equip/unequip
   if (key === 0x65 && state.items.length > 0) {
     const itemEntity = state.items[state.cursorIndex]!;
-    const equipment = world.getComponent(player, "Equipment");
-    const weapon = world.getComponent(itemEntity, "Weapon");
 
-    if (!weapon) {
+    if (!isEquippable(world, itemEntity)) {
       messages.add("Cannot equip that item.");
       return "none";
     }
 
-    if (equipment && equipment.weapon === itemEntity) {
-      unequip(world, player, messages);
+    if (isEquipped(world, player, itemEntity)) {
+      unequip(world, player, messages, itemEntity);
     } else {
       equip(world, player, itemEntity, messages);
     }
@@ -119,7 +125,6 @@ export function renderInventoryScreen(
   let row = boxY + 1;
 
   const inventory = world.getComponent(player, "Inventory");
-  const equipment = world.getComponent(player, "Equipment");
 
   if (state.items.length === 0) {
     renderer.drawText(cx + 2, row + 1, "(empty)", "gray");
@@ -134,11 +139,11 @@ export function renderInventoryScreen(
     if (!item) continue;
 
     const isSelected = i === state.cursorIndex;
-    const isEquipped = equipment?.weapon === itemEntity;
+    const equipped = isEquipped(world, player, itemEntity);
     const consumable = world.getComponent(itemEntity, "Consumable");
 
     const cursor = isSelected ? "> " : "  ";
-    const equippedTag = isEquipped ? " [E]" : "";
+    const equippedTag = equipped ? " [E]" : "";
     const chargesTag =
       consumable && consumable.charges > 1 ? ` x${consumable.charges}` : "";
     const weightStr = `${item.weight}wt`;

@@ -1,6 +1,7 @@
 import type { World, Entity } from "../world.ts";
 import type { MessageLog } from "./messages.ts";
 import { entityName } from "./entity-name.ts";
+import { getEffectiveStats } from "./stats.ts";
 
 export function isHostile(world: World, a: Entity, b: Entity): boolean {
   const factionA = world.getComponent(a, "Faction");
@@ -31,8 +32,11 @@ export function attack(
       : undefined;
   const baseDamage = weapon ? weapon.damage : attackerStats.strength;
 
+  const effectiveDefender = getEffectiveStats(world, defender);
+  const totalDefense = effectiveDefender?.defense ?? defenderStats.defense;
+
   const variance = Math.floor(rng() * 3) - 1; // -1, 0, or 1
-  let damage = Math.max(1, baseDamage - defenderStats.defense + variance);
+  let damage = Math.max(1, baseDamage - totalDefense + variance);
 
   const isCrit = rng() < 0.05;
   if (isCrit) damage *= 2;
@@ -55,7 +59,7 @@ export function attack(
     : "?";
   const defHp = `${defenderHealth.current}/${defenderHealth.max}`;
   messages.add(
-    `[combat] ${atkName}[hp=${atkHp} str=${attackerStats.strength} def=${attackerStats.defense} spd=${attackerStats.speed}] → ${defName}[hp=${defHp} str=${defenderStats.strength} def=${defenderStats.defense} spd=${defenderStats.speed}] | dmg=${damage}${isCrit ? " crit" : ""} (base=${baseDamage} var=${variance}) hp: ${hpBefore}→${defenderHealth.current}`,
+    `[combat] ${atkName}[hp=${atkHp} str=${attackerStats.strength} def=${attackerStats.defense} spd=${attackerStats.speed}] → ${defName}[hp=${defHp} str=${defenderStats.strength} def=${defenderStats.defense} spd=${defenderStats.speed}] | dmg=${damage}${isCrit ? " crit" : ""} (base=${baseDamage} totalDef=${totalDefense} var=${variance}) hp: ${hpBefore}→${defenderHealth.current}`,
     "debug",
   );
 

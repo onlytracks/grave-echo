@@ -2,8 +2,25 @@ import type { World } from "../ecs/world.ts";
 import type { Room } from "./dungeon-generator.ts";
 import {
   createIronSword,
+  createSwordAndShield,
+  createBattleAxe,
+  createMaceAndShield,
+  createIronSpear,
+  createHalberd,
   createShortBow,
+  createCrossbow,
+  createOakStaff,
+  createWand,
+  createLeatherArmor,
+  createChainmail,
+  createPlateArmor,
+  createIronRing,
+  createWardAmulet,
+  createSwiftBoots,
   createHealingPotion,
+  createSpeedPotion,
+  createStrengthPotion,
+  createDefensePotion,
 } from "../items/item-factory.ts";
 import type { MessageLog } from "../ecs/systems/messages.ts";
 
@@ -14,9 +31,30 @@ export interface PopulatorConfig {
 type ItemFactory = (world: World, x: number, y: number) => number;
 
 const ITEM_POOL: { factory: ItemFactory; weight: number }[] = [
-  { factory: createIronSword, weight: 3 },
-  { factory: createShortBow, weight: 3 },
-  { factory: createHealingPotion, weight: 4 },
+  // Weapons (weight 2 each)
+  { factory: createIronSword, weight: 2 },
+  { factory: createSwordAndShield, weight: 2 },
+  { factory: createBattleAxe, weight: 2 },
+  { factory: createMaceAndShield, weight: 2 },
+  { factory: createIronSpear, weight: 2 },
+  { factory: createHalberd, weight: 2 },
+  { factory: createShortBow, weight: 2 },
+  { factory: createCrossbow, weight: 2 },
+  { factory: createOakStaff, weight: 2 },
+  { factory: createWand, weight: 2 },
+  // Armor (weight 3 each)
+  { factory: createLeatherArmor, weight: 3 },
+  { factory: createChainmail, weight: 3 },
+  { factory: createPlateArmor, weight: 3 },
+  // Accessories (weight 2 each)
+  { factory: createIronRing, weight: 2 },
+  { factory: createWardAmulet, weight: 2 },
+  { factory: createSwiftBoots, weight: 2 },
+  // Consumables
+  { factory: createHealingPotion, weight: 5 },
+  { factory: createSpeedPotion, weight: 2 },
+  { factory: createStrengthPotion, weight: 2 },
+  { factory: createDefensePotion, weight: 2 },
 ];
 
 function pickItem(rng: () => number): ItemFactory {
@@ -52,7 +90,13 @@ function createPlayer(world: World, x: number, y: number): number {
     totalWeight: 0,
     carryCapacity: 30,
   });
-  world.addComponent(player, "Equipment", { weapon: null });
+  world.addComponent(player, "Equipment", {
+    weapon: null,
+    armor: null,
+    accessory1: null,
+    accessory2: null,
+  });
+  world.addComponent(player, "Buffs", { active: [] });
   world.addComponent(player, "Senses", { vision: { range: 8 } });
   world.addComponent(player, "Awareness", {
     state: "idle",
