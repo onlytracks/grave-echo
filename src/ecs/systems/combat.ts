@@ -49,8 +49,13 @@ export function attack(
 
   const atkName = entityName(world, attacker);
   const defName = entityName(world, defender);
+  const attackerHealth = world.getComponent(attacker, "Health");
+  const atkHp = attackerHealth
+    ? `${attackerHealth.current}/${attackerHealth.max}`
+    : "?";
+  const defHp = `${defenderHealth.current}/${defenderHealth.max}`;
   messages.add(
-    `[combat] ${atkName}(str=${baseDamage}) → ${defName}(def=${defenderStats.defense}), dmg=${damage}${isCrit ? " crit" : ""}, hp: ${hpBefore}→${defenderHealth.current}`,
+    `[combat] ${atkName}[hp=${atkHp} str=${attackerStats.strength} def=${attackerStats.defense} spd=${attackerStats.speed}] → ${defName}[hp=${defHp} str=${defenderStats.strength} def=${defenderStats.defense} spd=${defenderStats.speed}] | dmg=${damage}${isCrit ? " crit" : ""} (base=${baseDamage} var=${variance}) hp: ${hpBefore}→${defenderHealth.current}`,
     "debug",
   );
 
