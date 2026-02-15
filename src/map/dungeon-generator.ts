@@ -37,10 +37,24 @@ function randInt(min: number, max: number, rng: () => number): number {
 }
 
 export function roomCenter(room: Room): { x: number; y: number } {
-  return {
-    x: Math.floor(room.x + room.width / 2),
-    y: Math.floor(room.y + room.height / 2),
-  };
+  const cx = Math.floor(room.x + room.width / 2);
+  const cy = Math.floor(room.y + room.height / 2);
+  if (
+    room.floors.length > 0 &&
+    !room.floors.some((f) => f.x === cx && f.y === cy)
+  ) {
+    let best = room.floors[0]!;
+    let bestDist = Infinity;
+    for (const f of room.floors) {
+      const d = (f.x - cx) ** 2 + (f.y - cy) ** 2;
+      if (d < bestDist) {
+        bestDist = d;
+        best = f;
+      }
+    }
+    return { x: best.x, y: best.y };
+  }
+  return { x: cx, y: cy };
 }
 
 function roomsOverlap(a: Room, b: Room, gap: number): boolean {

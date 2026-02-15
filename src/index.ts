@@ -45,9 +45,11 @@ function main(): void {
   for (let i = 0; i < itemFactories.length && i < rooms.length; i++) {
     const room = rooms[i]!;
     const c = roomCenter(room);
-    const offsetX = i === 0 ? room.x + 1 : c.x;
-    const offsetY = i === 0 ? room.y + 1 : c.y + 1;
-    itemFactories[i]!(world, offsetX, offsetY);
+    const floor =
+      room.floors.find((f) => f.x === c.x + 1 && f.y === c.y) ??
+      room.floors.find((f) => f.x !== c.x || f.y !== c.y) ??
+      room.floors[0]!;
+    itemFactories[i]!(world, floor.x, floor.y);
   }
 
   for (let i = 1; i < rooms.length; i++) {
