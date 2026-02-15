@@ -2,6 +2,8 @@ import type { Color, Renderer } from "../renderer.ts";
 import type { World } from "../../ecs/world.ts";
 import type { Region } from "../layout.ts";
 import type { TaggedMessage } from "../../ecs/systems/messages.ts";
+import type { GameMap } from "../../map/game-map.ts";
+import { hasLineOfSight } from "../../ecs/systems/sensory.ts";
 
 function debugMessageColor(msg: TaggedMessage): Color {
   if (msg.category === "gameplay") return "white";
@@ -20,6 +22,7 @@ export function renderDebugPanel(
   world: World,
   region: Region,
   messages?: readonly TaggedMessage[],
+  map?: GameMap,
 ): void {
   renderer.drawBox(region.x, region.y, region.width, region.height, "Debug");
 
@@ -46,29 +49,68 @@ export function renderDebugPanel(
   line(worldLine, "white");
 
   const aiEntities = world.query("AIControlled", "Position");
-  if (aiEntities.length > 0) {
-    const aiParts: string[] = [];
-    for (const eid of aiEntities) {
-      const pos = world.getComponent(eid, "Position")!;
-      const hp = world.getComponent(eid, "Health");
-      const rend = world.getComponent(eid, "Renderable");
-      const awareness = world.getComponent(eid, "Awareness");
-      const name = rend ? rend.char : "?";
-      let part = `${name}#${eid}`;
-      if (hp) part += ` ${hp.current}/${hp.max}hp`;
-      if (awareness) part += ` [${awareness.state}]`;
+  const playerPos =
+    players.length > 0
+      ? world.getComponent(players[0]!, "Position")
+      : undefined;
 
-      if (players.length > 0) {
-        const playerPos = world.getComponent(players[0]!, "Position");
-        if (playerPos) {
-          const dist =
-            Math.abs(pos.x - playerPos.x) + Math.abs(pos.y - playerPos.y);
-          part += ` d=${dist}`;
-        }
+  const threatSources: string[] = [];
+  const aiLines: { text: string; color: Color }[] = [];
+
+  for (const eid of aiEntities) {
+    const pos = world.getComponent(eid, "Position")!;
+    const hp = world.getComponent(eid, "Health");
+    const rend = world.getComponent(eid, "Renderable");
+    const awareness = world.getComponent(eid, "Awareness");
+    const senses = world.getComponent(eid, "Senses");
+    const name = rend ? rend.char : "?";
+    let part = `${name}#${eid}`;
+    if (hp) part += ` ${hp.current}/${hp.max}hp`;
+
+    if (awareness) {
+      if (awareness.state === "alert") {
+        part += ` [alert ${awareness.turnsWithoutTarget}/${awareness.alertDuration}]`;
+      } else {
+        part += ` [idle]`;
       }
-      aiParts.push(part);
     }
-    line(`AI: ${aiParts.join(" | ")}`, "cyan");
+
+    const visRange = senses?.vision.range;
+    if (visRange !== undefined) part += ` vis=${visRange}`;
+
+    let dist: number | undefined;
+    let los = false;
+    if (playerPos) {
+      dist = Math.abs(pos.x - playerPos.x) + Math.abs(pos.y - playerPos.y);
+      part += ` d=${dist}`;
+      if (map) {
+        los = hasLineOfSight(map, pos.x, pos.y, playerPos.x, playerPos.y);
+        part += ` LOS:${los ? "Y" : "N"}`;
+      }
+    }
+
+    const isSensing =
+      awareness?.state === "alert" &&
+      los &&
+      visRange !== undefined &&
+      dist !== undefined &&
+      dist <= visRange;
+    if (isSensing) {
+      part += " ⚠";
+      threatSources.push(`${name}#${eid} (d=${dist}, vis=${visRange}, LOS)`);
+    }
+
+    aiLines.push({ text: part, color: isSensing ? "yellow" : "cyan" });
+  }
+
+  if (threatSources.length > 0) {
+    line(`Alert: ${threatSources.join(", ")} sensing you`, "yellow");
+  } else if (aiEntities.length > 0) {
+    line("Status: idle (no threats sensing you)", "gray");
+  }
+
+  for (const ai of aiLines) {
+    line(ai.text, ai.color);
   }
 
   if (messages && messages.length > 0) {

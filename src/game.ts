@@ -351,6 +351,7 @@ export class Game {
         this.world,
         layout.messageLog,
         this.messages.getAllMessagesWithTurns(),
+        this.map,
       );
     } else {
       renderMessageLog(
