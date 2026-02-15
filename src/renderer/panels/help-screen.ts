@@ -1,10 +1,16 @@
-import type { Renderer } from "../renderer.ts";
+import type { Color, Renderer } from "../renderer.ts";
 import type { Region } from "../layout.ts";
 
 interface Keybinding {
   key: string;
   action: string;
   category: string;
+}
+
+interface GlyphEntry {
+  glyph: string;
+  label: string;
+  fg: Color;
 }
 
 const KEYBINDINGS: Keybinding[] = [
@@ -21,6 +27,20 @@ const KEYBINDINGS: Keybinding[] = [
   { key: "Esc / q", action: "Quit", category: "Other" },
 ];
 
+const GLYPH_LEGEND: GlyphEntry[] = [
+  { glyph: "@", label: "You", fg: "brightWhite" },
+  { glyph: "\u{0121}", label: "Goblin", fg: "red" },
+  { glyph: "\u{0120}", label: "Boss", fg: "brightRed" },
+  { glyph: "·", label: "Floor", fg: "gray" },
+  { glyph: "▓", label: "Wall", fg: "white" },
+  { glyph: "\u{F04E5}", label: "Weapon", fg: "cyan" },
+  { glyph: "\u{F0893}", label: "Armor", fg: "cyan" },
+  { glyph: "\u{1AAD}", label: "Ring", fg: "cyan" },
+  { glyph: "\u{0920}", label: "Amulet", fg: "cyan" },
+  { glyph: "\u{16C3}", label: "Boots", fg: "cyan" },
+  { glyph: "\u{13A3}", label: "Potion", fg: "green" },
+];
+
 export function renderHelpScreen(renderer: Renderer, region: Region): void {
   const categories = new Map<string, Keybinding[]>();
   for (const kb of KEYBINDINGS) {
@@ -33,14 +53,17 @@ export function renderHelpScreen(renderer: Renderer, region: Region): void {
   }
 
   const keyColW = 14;
-  let lineCount = 0;
+  let keybindLines = 0;
   for (const [, bindings] of categories) {
-    lineCount += 1 + bindings.length + 1; // header + bindings + blank
+    keybindLines += 1 + bindings.length + 1;
   }
-  lineCount += 1; // footer
+
+  // 1 divider + 1 "Glyphs" header + glyph entries + 1 blank + 1 footer
+  const glyphLines = 1 + 1 + GLYPH_LEGEND.length + 1;
+  const totalLines = keybindLines + glyphLines + 1;
 
   const boxW = Math.min(36, region.width - 2);
-  const boxH = Math.min(lineCount + 3, region.height - 2);
+  const boxH = Math.min(totalLines + 3, region.height - 2);
   const boxX = region.x + Math.floor((region.width - boxW) / 2);
   const boxY = region.y + Math.floor((region.height - boxH) / 2);
 
@@ -69,6 +92,27 @@ export function renderHelpScreen(renderer: Renderer, region: Region): void {
       renderer.drawText(cx, row, line, "gray");
       row++;
     }
+    row++;
+  }
+
+  // Divider
+  if (row < boxY + boxH - 1) {
+    const divider = "─".repeat(innerW);
+    renderer.drawText(cx, row, divider, "gray");
+    row++;
+  }
+
+  // Glyph legend
+  if (row < boxY + boxH - 1) {
+    renderer.drawText(cx, row, "Glyphs", "brightYellow");
+    row++;
+  }
+
+  for (const entry of GLYPH_LEGEND) {
+    if (row >= boxY + boxH - 1) break;
+    renderer.drawCell(cx + 2, row, entry.glyph, entry.fg, "black");
+    const label = entry.label.slice(0, innerW - 6);
+    renderer.drawText(cx + 5, row, label, "gray");
     row++;
   }
 
