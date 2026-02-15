@@ -25,6 +25,25 @@ function main(): void {
     movementRemaining: 3,
   });
 
+  const goblin = world.createEntity();
+  world.addComponent(goblin, "Position", { x: 3, y: 3 });
+  world.addComponent(goblin, "Renderable", {
+    char: "g",
+    fg: "red",
+    bg: "black",
+  });
+  world.addComponent(goblin, "Health", { current: 8, max: 8 });
+  world.addComponent(goblin, "Stats", { strength: 3, defense: 1, speed: 2 });
+  world.addComponent(goblin, "TurnActor", {
+    hasActed: false,
+    movementRemaining: 2,
+  });
+  world.addComponent(goblin, "AIControlled", {
+    pattern: "charger",
+    targetEntity: player,
+  });
+  world.addComponent(goblin, "Collidable", { blocksMovement: true });
+
   enableRawMode();
   renderer.init();
 

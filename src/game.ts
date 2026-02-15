@@ -8,8 +8,8 @@ import {
   endPlayerTurn,
   isPlayerTurnOver,
   resetAITurns,
-  getAIEntities,
 } from "./ecs/systems/turn.ts";
+import { processAI } from "./ecs/systems/ai.ts";
 import { waitForInput } from "./input/input-handler.ts";
 
 export enum GameState {
@@ -46,10 +46,7 @@ export class Game {
 
       if (isPlayerTurnOver(this.world)) {
         resetAITurns(this.world);
-        // AI processing will go here (Phase 0b.2)
-        for (const _entity of getAIEntities(this.world)) {
-          // placeholder
-        }
+        processAI(this.world, this.map);
         startPlayerTurn(this.world);
       }
     }
