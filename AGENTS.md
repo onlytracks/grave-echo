@@ -68,3 +68,4 @@ Test in the game before committing — some glyphs look different across fonts.
 - One responsibility per system
 - Test systems in isolation with minimal ECS worlds
 - When closing a todo that corresponds to completed work, stage the todo status change before committing — never commit code and close the todo separately
+- **Never modify closed/done todos** — they are an archive of completed work. Only `pending` or `open` todos may be updated. If a closed todo needs revision, create a new todo that references it.
