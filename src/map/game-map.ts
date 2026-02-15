@@ -23,8 +23,8 @@ export const FLOOR_TILE: Tile = {
 
 export const WALL_TILE: Tile = {
   type: TileType.Wall,
-  char: "#",
-  fg: "gray",
+  char: "▓",
+  fg: "white",
   bg: "black",
   walkable: false,
   transparent: false,
