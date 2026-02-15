@@ -32,6 +32,7 @@ function fgCode(color: Color): string {
 }
 
 function bgCode(color: Color): string {
+  if (color === "black") return `${ESC}49m`;
   const code = COLOR_CODES[color];
   return `${ESC}48;5;${code}m`;
 }
