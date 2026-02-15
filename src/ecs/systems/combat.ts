@@ -22,11 +22,16 @@ export function attack(
   const defenderHealth = world.getComponent(defender, "Health");
   if (!attackerStats || !defenderStats || !defenderHealth) return;
 
+  const equipment = world.getComponent(attacker, "Equipment");
+  const weaponEntity = equipment?.weapon ?? null;
+  const weapon =
+    weaponEntity !== null
+      ? world.getComponent(weaponEntity, "Weapon")
+      : undefined;
+  const baseDamage = weapon ? weapon.damage : attackerStats.strength;
+
   const variance = Math.floor(rng() * 3) - 1; // -1, 0, or 1
-  let damage = Math.max(
-    1,
-    attackerStats.strength - defenderStats.defense + variance,
-  );
+  let damage = Math.max(1, baseDamage - defenderStats.defense + variance);
 
   const isCrit = rng() < 0.05;
   if (isCrit) damage *= 2;

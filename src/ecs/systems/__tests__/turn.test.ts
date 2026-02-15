@@ -14,6 +14,7 @@ function setupPlayerWorld() {
   world.addComponent(player, "TurnActor", {
     hasActed: false,
     movementRemaining: 3,
+    secondaryUsed: false,
   });
   return { world, map, player };
 }

@@ -3,6 +3,7 @@ import type { GameMap } from "../../map/game-map.ts";
 import type { InputEvent } from "../../input/input-handler.ts";
 import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
+import { pickup, swapToNextWeapon, useConsumable } from "./inventory.ts";
 
 const DIRECTION_DELTA = {
   up: { dx: 0, dy: -1 },
@@ -17,22 +18,73 @@ export function handlePlayerInput(
   event: InputEvent,
   messages?: MessageLog,
 ): boolean {
-  if (event.type !== "move") return false;
-
   const players = world.query("PlayerControlled", "Position");
   if (players.length === 0) return false;
-
   const player = players[0]!;
-  const pos = world.getComponent(player, "Position")!;
-  const delta = DIRECTION_DELTA[event.direction];
 
-  const result = tryMove(
-    world,
-    map,
-    player,
-    pos.x + delta.dx,
-    pos.y + delta.dy,
-    messages,
-  );
-  return result !== "blocked";
+  if (event.type === "move") {
+    const pos = world.getComponent(player, "Position")!;
+    const delta = DIRECTION_DELTA[event.direction];
+    const result = tryMove(
+      world,
+      map,
+      player,
+      pos.x + delta.dx,
+      pos.y + delta.dy,
+      messages,
+    );
+    return result !== "blocked";
+  }
+
+  if (event.type === "pickup" && messages) {
+    const pos = world.getComponent(player, "Position")!;
+    const items = world.query("Position", "Item");
+    const itemHere = items.find((id) => {
+      const p = world.getComponent(id, "Position")!;
+      return p.x === pos.x && p.y === pos.y;
+    });
+    if (itemHere !== undefined) {
+      return pickup(world, player, itemHere, messages);
+    }
+    messages.add("Nothing to pick up here.");
+    return false;
+  }
+
+  if (event.type === "swapWeapon" && messages) {
+    const turnActor = world.getComponent(player, "TurnActor");
+    if (turnActor?.secondaryUsed) {
+      messages.add("Already used secondary action this turn.");
+      return false;
+    }
+    const result = swapToNextWeapon(world, player, messages);
+    if (result && turnActor) {
+      turnActor.secondaryUsed = true;
+    }
+    return result;
+  }
+
+  if (event.type === "useItem" && messages) {
+    const turnActor = world.getComponent(player, "TurnActor");
+    if (turnActor?.hasActed) return false;
+
+    const inventory = world.getComponent(player, "Inventory");
+    if (!inventory) return false;
+
+    const consumableId = inventory.items.find((id) =>
+      world.hasComponent(id, "Consumable"),
+    );
+    if (consumableId === undefined) {
+      messages.add("No consumables in inventory.");
+      return false;
+    }
+
+    const used = useConsumable(world, player, consumableId, messages);
+    if (used && turnActor) {
+      turnActor.hasActed = true;
+      turnActor.movementRemaining = 0;
+    }
+    return used;
+  }
+
+  return false;
 }

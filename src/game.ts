@@ -2,6 +2,7 @@ import type { World } from "./ecs/world.ts";
 import type { GameMap } from "./map/game-map.ts";
 import type { Renderer } from "./renderer/renderer.ts";
 import { renderGameGrid } from "./renderer/panels/game-grid.ts";
+import { renderDebugPanel } from "./renderer/panels/debug-panel.ts";
 import { handlePlayerInput } from "./ecs/systems/input.ts";
 import {
   startPlayerTurn,
@@ -23,6 +24,7 @@ export enum GameState {
 export class Game {
   state = GameState.Gameplay;
   private messages = new MessageLog();
+  private debugVisible = false;
 
   constructor(
     private world: World,
@@ -40,6 +42,11 @@ export class Game {
       if (event.type === "quit") {
         this.state = GameState.Quitting;
         break;
+      }
+
+      if (event.type === "toggleDebug") {
+        this.debugVisible = !this.debugVisible;
+        continue;
       }
 
       if (event.type === "pass") {
@@ -79,18 +86,63 @@ export class Game {
     }
   }
 
+  private getPlayerPos(): { x: number; y: number } | undefined {
+    const players = this.world.query("PlayerControlled", "Position");
+    if (players.length === 0) return undefined;
+    return this.world.getComponent(players[0]!, "Position");
+  }
+
+  private calculateViewport(
+    viewW: number,
+    viewH: number,
+  ): { x: number; y: number } {
+    const playerPos = this.getPlayerPos();
+    if (!playerPos) return { x: 0, y: 0 };
+    return {
+      x: Math.max(
+        0,
+        Math.min(playerPos.x - Math.floor(viewW / 2), this.map.width - viewW),
+      ),
+      y: Math.max(
+        0,
+        Math.min(playerPos.y - Math.floor(viewH / 2), this.map.height - viewH),
+      ),
+    };
+  }
+
   private render(): void {
     this.renderer.clear();
     const size = this.renderer.getScreenSize();
-    const gridW = Math.min(this.map.width + 2, size.width);
+
+    let gridW: number;
     const gridH = Math.min(this.map.height + 2, size.height - 4);
-    renderGameGrid(
-      this.renderer,
-      this.world,
-      this.map,
-      { x: 0, y: 0, width: gridW, height: gridH },
-      { x: 0, y: 0 },
-    );
+
+    if (this.debugVisible) {
+      gridW = Math.floor(size.width * 0.6);
+      const debugW = size.width - gridW;
+      renderGameGrid(
+        this.renderer,
+        this.world,
+        this.map,
+        { x: 0, y: 0, width: gridW, height: gridH },
+        this.calculateViewport(gridW - 2, gridH - 2),
+      );
+      renderDebugPanel(this.renderer, this.world, {
+        x: gridW,
+        y: 0,
+        width: debugW,
+        height: gridH,
+      });
+    } else {
+      gridW = Math.min(this.map.width + 2, size.width);
+      renderGameGrid(
+        this.renderer,
+        this.world,
+        this.map,
+        { x: 0, y: 0, width: gridW, height: gridH },
+        this.calculateViewport(gridW - 2, gridH - 2),
+      );
+    }
 
     const players = this.world.query("PlayerControlled", "TurnActor", "Stats");
     let statusText = "Arrow keys to move, Q to quit";

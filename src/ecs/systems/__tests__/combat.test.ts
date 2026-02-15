@@ -17,6 +17,7 @@ function setupCombat() {
   world.addComponent(attacker, "TurnActor", {
     hasActed: false,
     movementRemaining: 3,
+    secondaryUsed: false,
   });
   world.addComponent(attacker, "Faction", { factionId: "player" });
   world.addComponent(attacker, "PlayerControlled", {});
@@ -34,6 +35,7 @@ function setupCombat() {
   world.addComponent(defender, "TurnActor", {
     hasActed: false,
     movementRemaining: 2,
+    secondaryUsed: false,
   });
   world.addComponent(defender, "Faction", { factionId: "enemy" });
   world.addComponent(defender, "Collidable", { blocksMovement: true });
@@ -123,5 +125,40 @@ describe("Combat System", () => {
     const result = tryMove(world, map, attacker, 2, 1, messages);
     expect(result).toBe("blocked");
     expect(world.getComponent(defender, "Health")!.current).toBe(8);
+  });
+
+  test("attack uses weapon damage when weapon is equipped", () => {
+    const { world, messages, attacker, defender } = setupCombat();
+    const sword = world.createEntity();
+    world.addComponent(sword, "Item", {
+      name: "Iron Sword",
+      weight: 6,
+      rarity: "common",
+    });
+    world.addComponent(sword, "Weapon", {
+      damage: 10,
+      range: 1,
+      weaponType: "sword",
+    });
+    world.addComponent(attacker, "Inventory", {
+      items: [sword],
+      totalWeight: 6,
+      carryCapacity: 30,
+    });
+    world.addComponent(attacker, "Equipment", { weapon: sword });
+
+    // rng 0.5 → variance 0, no crit
+    attack(world, attacker, defender, messages, () => 0.5);
+    // weapon damage 10 - defense 1 + 0 = 9
+    expect(world.getComponent(defender, "Health")!.current).toBe(-1);
+  });
+
+  test("attack uses Stats.strength when no weapon equipped (unarmed)", () => {
+    const { world, messages, attacker, defender } = setupCombat();
+    world.addComponent(attacker, "Equipment", { weapon: null });
+
+    attack(world, attacker, defender, messages, () => 0.5);
+    // strength 5 - defense 1 + 0 = 4
+    expect(world.getComponent(defender, "Health")!.current).toBe(4);
   });
 });

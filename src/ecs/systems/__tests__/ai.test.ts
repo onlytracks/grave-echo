@@ -35,6 +35,7 @@ function setup(opts?: {
   world.addComponent(enemy, "TurnActor", {
     hasActed: false,
     movementRemaining: speed,
+    secondaryUsed: false,
   });
   world.addComponent(enemy, "AIControlled", {
     pattern: "charger" as const,
