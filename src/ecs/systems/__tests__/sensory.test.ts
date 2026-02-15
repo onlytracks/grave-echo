@@ -344,6 +344,24 @@ describe("updatePlayerAwareness", () => {
     const awareness = world.getComponent(players[0]!, "Awareness")!;
     expect(awareness.state).toBe("alert");
   });
+
+  test("idle enemy in vision goes alert → player goes alert via computePlayerFOW", () => {
+    const { world, map, player } = setupPlayerAwarenessWorld();
+    const enemy = addEnemy(world, 8, 5, "idle");
+    world.addComponent(enemy, "Senses", { vision: { range: 6 } });
+    world.addComponent(enemy, "AIControlled", {
+      pattern: "charger",
+      targetEntity: null,
+    });
+
+    computePlayerFOW(world, map);
+
+    const enemyAwareness = world.getComponent(enemy, "Awareness")!;
+    expect(enemyAwareness.state).toBe("alert");
+
+    const playerAwareness = world.getComponent(player, "Awareness")!;
+    expect(playerAwareness.state).toBe("alert");
+  });
 });
 
 describe("AI gating", () => {

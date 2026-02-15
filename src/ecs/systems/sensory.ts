@@ -140,6 +140,19 @@ export function updatePlayerAwareness(
   awareness.state = anyAlert ? "alert" : "idle";
 }
 
+function updateAllAwareness(world: World, map: GameMap): void {
+  const aiEntities = world.query(
+    "AIControlled",
+    "Senses",
+    "Awareness",
+    "Position",
+    "Faction",
+  );
+  for (const entity of aiEntities) {
+    updateAwareness(world, map, entity);
+  }
+}
+
 export function computePlayerFOW(world: World, map: GameMap): Set<string> {
   const players = world.query("PlayerControlled", "Position", "Senses");
   if (players.length === 0) return new Set();
@@ -155,6 +168,7 @@ export function computePlayerFOW(world: World, map: GameMap): Set<string> {
     map.markExplored(x!, y!);
   }
 
+  updateAllAwareness(world, map);
   updatePlayerAwareness(world, map, visible);
 
   return visible;
