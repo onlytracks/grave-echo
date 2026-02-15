@@ -19,7 +19,14 @@ import {
 import { processAI } from "./ecs/systems/ai.ts";
 import { processHealth } from "./ecs/systems/health.ts";
 import { MessageLog } from "./ecs/systems/messages.ts";
-import { waitForInput } from "./input/input-handler.ts";
+import { waitForInput, waitForRawInput } from "./input/input-handler.ts";
+import {
+  createInventoryScreenState,
+  handleInventoryInput,
+  handleInventoryKey,
+  renderInventoryScreen,
+  type InventoryScreenState,
+} from "./ui/inventory-screen.ts";
 import { computePlayerFOW } from "./ecs/systems/sensory.ts";
 import { generateDungeon } from "./map/dungeon-generator.ts";
 import { populateRooms, type PopulatorConfig } from "./map/room-populator.ts";
@@ -28,6 +35,7 @@ enum GameState {
   Running,
   Dead,
   Quit,
+  Inventory,
 }
 
 export class Game {
@@ -39,6 +47,7 @@ export class Game {
   private debugVisible = false;
   private turnCounter = 0;
   private killCount = 0;
+  private inventoryScreen: InventoryScreenState | null = null;
 
   constructor(
     private renderer: Renderer,
@@ -88,9 +97,70 @@ export class Game {
     this.visibleTiles = computePlayerFOW(this.world, this.map, this.messages);
   }
 
+  private getPlayerEntity(): number | undefined {
+    const players = this.world.query("PlayerControlled", "Position");
+    return players[0];
+  }
+
+  private openInventory(): void {
+    const player = this.getPlayerEntity();
+    if (!player) return;
+    this.inventoryScreen = createInventoryScreenState(this.world, player);
+    this.state = GameState.Inventory;
+  }
+
+  private closeInventory(): void {
+    this.inventoryScreen = null;
+    this.state = GameState.Running;
+  }
+
+  private async handleInventoryMode(): Promise<void> {
+    const player = this.getPlayerEntity();
+    if (!player || !this.inventoryScreen) {
+      this.closeInventory();
+      return;
+    }
+
+    const { event, raw } = await waitForRawInput();
+
+    const action = handleInventoryInput(
+      this.world,
+      player,
+      this.inventoryScreen,
+      event,
+      this.messages,
+    );
+    if (action === "close") {
+      this.closeInventory();
+      return;
+    }
+
+    if (raw.length === 1) {
+      const keyAction = handleInventoryKey(
+        this.world,
+        player,
+        this.inventoryScreen,
+        raw[0]!,
+        this.messages,
+      );
+      if (keyAction === "close") {
+        this.closeInventory();
+      }
+    }
+  }
+
   private async playUntilDeath(): Promise<void> {
-    while (this.state === GameState.Running) {
+    while (
+      this.state === GameState.Running ||
+      this.state === GameState.Inventory
+    ) {
       this.render();
+
+      if (this.state === GameState.Inventory) {
+        await this.handleInventoryMode();
+        continue;
+      }
+
       const event = await waitForInput();
 
       if (event.type === "quit") {
@@ -100,6 +170,11 @@ export class Game {
 
       if (event.type === "toggleDebug") {
         this.debugVisible = !this.debugVisible;
+        continue;
+      }
+
+      if (event.type === "inventory") {
+        this.openInventory();
         continue;
       }
 
@@ -249,6 +324,19 @@ export class Game {
         layout.messageLog,
         this.messages.getRecent(layout.messageLog.height - 2),
       );
+    }
+
+    if (this.state === GameState.Inventory && this.inventoryScreen) {
+      const player = this.getPlayerEntity();
+      if (player) {
+        renderInventoryScreen(
+          this.renderer,
+          this.world,
+          player,
+          this.inventoryScreen,
+          layout.gameGrid,
+        );
+      }
     }
 
     this.renderer.flush();

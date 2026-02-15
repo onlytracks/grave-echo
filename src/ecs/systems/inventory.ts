@@ -17,7 +17,6 @@ export function pickup(
   }
 
   world.removeComponent(itemEntity, "Position");
-  world.removeComponent(itemEntity, "Renderable");
   inventory.items.push(itemEntity);
   inventory.totalWeight += item.weight;
   messages.add(`You pick up ${item.name}`);
@@ -54,23 +53,6 @@ export function drop(
   inventory.totalWeight -= item.weight;
 
   world.addComponent(itemEntity, "Position", { x: pos.x, y: pos.y });
-  const weapon = world.getComponent(itemEntity, "Weapon");
-  const consumable = world.getComponent(itemEntity, "Consumable");
-  if (weapon) {
-    const charMap = { sword: "/", bow: ")" } as const;
-    const fgMap = { sword: "white", bow: "yellow" } as const;
-    world.addComponent(itemEntity, "Renderable", {
-      char: charMap[weapon.weaponType],
-      fg: fgMap[weapon.weaponType],
-      bg: "black",
-    });
-  } else if (consumable) {
-    world.addComponent(itemEntity, "Renderable", {
-      char: "!",
-      fg: "brightRed",
-      bg: "black",
-    });
-  }
   messages.add(`You drop ${item.name}`);
 }
 

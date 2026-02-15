@@ -84,7 +84,7 @@ function createPotion(world: World, x: number, y: number): number {
 }
 
 describe("Inventory System", () => {
-  test("pickup adds item to inventory, removes Position/Renderable", () => {
+  test("pickup adds item to inventory, removes Position but keeps Renderable", () => {
     const { world, messages, player } = setupWorld();
     const sword = createSword(world, 5, 5);
 
@@ -95,7 +95,7 @@ describe("Inventory System", () => {
     expect(inv.items).toContain(sword);
     expect(inv.totalWeight).toBe(6);
     expect(world.getComponent(sword, "Position")).toBeUndefined();
-    expect(world.getComponent(sword, "Renderable")).toBeUndefined();
+    expect(world.getComponent(sword, "Renderable")).toBeDefined();
   });
 
   test("pickup fails when over carry capacity", () => {
@@ -110,9 +110,12 @@ describe("Inventory System", () => {
     expect(world.getComponent(sword, "Position")).toBeDefined();
   });
 
-  test("drop removes item from inventory, adds Position/Renderable", () => {
+  test("drop removes item from inventory, adds Position; Renderable already present", () => {
     const { world, messages, player } = setupWorld();
     const sword = createSword(world, 5, 5);
+    const originalRenderable = {
+      ...world.getComponent(sword, "Renderable")!,
+    };
     pickup(world, player, sword, messages);
 
     drop(world, player, sword, messages);
@@ -120,7 +123,25 @@ describe("Inventory System", () => {
     expect(inv.items).not.toContain(sword);
     expect(inv.totalWeight).toBe(0);
     expect(world.getComponent(sword, "Position")).toEqual({ x: 5, y: 5 });
-    expect(world.getComponent(sword, "Renderable")).toBeDefined();
+    const renderable = world.getComponent(sword, "Renderable");
+    expect(renderable).toBeDefined();
+    expect(renderable!.char).toBe(originalRenderable.char);
+    expect(renderable!.fg).toBe(originalRenderable.fg);
+  });
+
+  test("dropped item has both Position and Renderable for map rendering", () => {
+    const { world, messages, player } = setupWorld();
+    const potion = createPotion(world, 5, 5);
+    pickup(world, player, potion, messages);
+
+    world.getComponent(player, "Position")!.x = 8;
+    world.getComponent(player, "Position")!.y = 3;
+    drop(world, player, potion, messages);
+
+    expect(world.getComponent(potion, "Position")).toEqual({ x: 8, y: 3 });
+    expect(world.getComponent(potion, "Renderable")).toBeDefined();
+    const onMap = world.query("Position", "Renderable", "Item");
+    expect(onMap).toContain(potion);
   });
 
   test("equip sets Equipment.weapon", () => {

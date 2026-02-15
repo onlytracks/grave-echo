@@ -41,4 +41,8 @@ describe("parseInput", () => {
   test("unknown bytes parse to unknown", () => {
     expect(parseInput(Buffer.from([0x61]))).toEqual({ type: "unknown" });
   });
+
+  test("i key parses to inventory", () => {
+    expect(parseInput(Buffer.from([0x69]))).toEqual({ type: "inventory" });
+  });
 });

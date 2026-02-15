@@ -5,6 +5,7 @@ export type InputEvent =
   | { type: "pickup" }
   | { type: "swapWeapon" }
   | { type: "useItem" }
+  | { type: "inventory" }
   | { type: "toggleDebug" }
   | { type: "unknown" };
 
@@ -68,6 +69,9 @@ export function parseInput(data: Buffer): InputEvent {
     if (data[0] === 0x75) {
       return { type: "useItem" };
     }
+    if (data[0] === 0x69) {
+      return { type: "inventory" };
+    }
   }
 
   return { type: "unknown" };
@@ -87,11 +91,26 @@ export function disableRawMode(): void {
   }
 }
 
+export interface RawInput {
+  event: InputEvent;
+  raw: Buffer;
+}
+
 export function waitForInput(): Promise<InputEvent> {
   return new Promise((resolve) => {
     const handler = (data: Buffer) => {
       process.stdin.removeListener("data", handler);
       resolve(parseInput(data));
+    };
+    process.stdin.on("data", handler);
+  });
+}
+
+export function waitForRawInput(): Promise<RawInput> {
+  return new Promise((resolve) => {
+    const handler = (data: Buffer) => {
+      process.stdin.removeListener("data", handler);
+      resolve({ event: parseInput(data), raw: data });
     };
     process.stdin.on("data", handler);
   });
