@@ -7,7 +7,7 @@
     "worldgen",
     "spawning"
   ],
-  "status": "pending",
+  "status": "done",
   "created_at": "2026-02-15T03:34:43.047Z"
 }
 

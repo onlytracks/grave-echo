@@ -1,12 +1,28 @@
 import { GameMap, FLOOR_TILE, WALL_TILE } from "./game-map.ts";
 import { assignWallCharacters } from "./tile-utils.ts";
 
+export type RoomTag =
+  | "entry"
+  | "combat"
+  | "loot"
+  | "boss"
+  | "transition"
+  | "empty";
+
+export interface SpawnPoint {
+  x: number;
+  y: number;
+  type: "player" | "enemy" | "item";
+}
+
 export interface Room {
   x: number;
   y: number;
   width: number;
   height: number;
   floors: { x: number; y: number }[];
+  tag: RoomTag;
+  spawnPoints: SpawnPoint[];
 }
 
 export interface DungeonConfig {
@@ -396,6 +412,278 @@ function addDeadEnds(map: GameMap, rooms: Room[], config: DungeonConfig): void {
   }
 }
 
+function getInteriorFloors(
+  room: Room,
+  map: GameMap,
+): { x: number; y: number }[] {
+  return room.floors.filter((f) => {
+    for (const [dx, dy] of [
+      [0, 1],
+      [0, -1],
+      [1, 0],
+      [-1, 0],
+    ] as const) {
+      if (!map.isWalkable(f.x + dx, f.y + dy)) return false;
+    }
+    return true;
+  });
+}
+
+function buildAdjacency(rooms: Room[], map: GameMap): Map<number, Set<number>> {
+  const adj = new Map<number, Set<number>>();
+  for (let i = 0; i < rooms.length; i++) adj.set(i, new Set());
+
+  const roomIndex = new Map<string, number>();
+  for (let i = 0; i < rooms.length; i++) {
+    for (const f of rooms[i]!.floors) {
+      roomIndex.set(`${f.x},${f.y}`, i);
+    }
+  }
+
+  for (let i = 0; i < rooms.length; i++) {
+    const center = roomCenter(rooms[i]!);
+    const visited = new Set<string>();
+    const queue = [center];
+    visited.add(`${center.x},${center.y}`);
+
+    while (queue.length > 0) {
+      const { x, y } = queue.shift()!;
+      for (const [dx, dy] of [
+        [0, 1],
+        [0, -1],
+        [1, 0],
+        [-1, 0],
+      ] as const) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const key = `${nx},${ny}`;
+        if (visited.has(key) || !map.isWalkable(nx, ny)) continue;
+        visited.add(key);
+        const ri = roomIndex.get(key);
+        if (ri !== undefined && ri !== i) {
+          adj.get(i)!.add(ri);
+          adj.get(ri)!.add(i);
+        } else {
+          queue.push({ x: nx, y: ny });
+        }
+      }
+    }
+  }
+  return adj;
+}
+
+function bfsDistances(adj: Map<number, Set<number>>, start: number): number[] {
+  const dist = new Array(adj.size).fill(-1) as number[];
+  dist[start] = 0;
+  const queue = [start];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    for (const neighbor of adj.get(cur)!) {
+      if (dist[neighbor] === -1) {
+        dist[neighbor] = dist[cur]! + 1;
+        queue.push(neighbor);
+      }
+    }
+  }
+  return dist;
+}
+
+export function assignRoomTags(
+  rooms: Room[],
+  map: GameMap,
+  rng: () => number,
+): void {
+  if (rooms.length === 0) return;
+
+  rooms[0]!.tag = "entry";
+
+  if (rooms.length === 1) return;
+
+  const adj = buildAdjacency(rooms, map);
+  const distances = bfsDistances(adj, 0);
+
+  let bossIdx = -1;
+  let bestBossScore = -1;
+  for (let i = 1; i < rooms.length; i++) {
+    const area = rooms[i]!.floors.length;
+    const dist = distances[i] ?? 0;
+    const score = area * 2 + dist * 10;
+    if (score > bestBossScore) {
+      bestBossScore = score;
+      bossIdx = i;
+    }
+  }
+  rooms[bossIdx]!.tag = "boss";
+
+  const deadEnds: number[] = [];
+  for (let i = 1; i < rooms.length; i++) {
+    if (i === bossIdx) continue;
+    if ((adj.get(i)?.size ?? 0) <= 1) deadEnds.push(i);
+  }
+
+  let lootCount = 0;
+  const maxLoot = Math.min(2, Math.floor((rooms.length - 2) / 3) + 1);
+  for (const idx of deadEnds) {
+    if (lootCount < maxLoot) {
+      rooms[idx]!.tag = "loot";
+      lootCount++;
+    } else {
+      rooms[idx]!.tag = "empty";
+    }
+  }
+
+  const smallThreshold = Math.floor(
+    (rooms.reduce((sum, r) => sum + r.floors.length, 0) / rooms.length) * 0.6,
+  );
+
+  for (let i = 1; i < rooms.length; i++) {
+    if (rooms[i]!.tag) continue;
+
+    if (
+      rooms[i]!.floors.length < smallThreshold &&
+      (adj.get(i)?.size ?? 0) >= 2
+    ) {
+      rooms[i]!.tag = "transition";
+      continue;
+    }
+
+    if (
+      lootCount < maxLoot &&
+      rooms[i]!.floors.length < smallThreshold &&
+      rng() < 0.3
+    ) {
+      rooms[i]!.tag = "loot";
+      lootCount++;
+      continue;
+    }
+
+    rooms[i]!.tag = "combat";
+  }
+}
+
+function pickSpawnPositions(
+  floors: { x: number; y: number }[],
+  count: number,
+  rng: () => number,
+  exclude: Set<string> = new Set(),
+): { x: number; y: number }[] {
+  const available = floors.filter((f) => !exclude.has(`${f.x},${f.y}`));
+  if (available.length === 0) return [];
+
+  const result: { x: number; y: number }[] = [];
+  const used = new Set<string>();
+
+  for (let i = 0; i < Math.min(count, available.length); i++) {
+    let best: { x: number; y: number } | null = null;
+    let bestMinDist = -1;
+
+    const candidates = Math.min(8, available.length);
+    for (let c = 0; c < candidates; c++) {
+      const idx = Math.floor(rng() * available.length);
+      const f = available[idx]!;
+      const key = `${f.x},${f.y}`;
+      if (used.has(key)) continue;
+
+      let minDist = Infinity;
+      for (const prev of result) {
+        const d = Math.abs(f.x - prev.x) + Math.abs(f.y - prev.y);
+        if (d < minDist) minDist = d;
+      }
+      if (result.length === 0) minDist = 0;
+
+      if (minDist > bestMinDist) {
+        bestMinDist = minDist;
+        best = f;
+      }
+    }
+
+    if (best) {
+      result.push(best);
+      used.add(`${best.x},${best.y}`);
+    }
+  }
+  return result;
+}
+
+export function generateSpawnPoints(
+  rooms: Room[],
+  map: GameMap,
+  rng: () => number,
+): void {
+  for (const room of rooms) {
+    room.spawnPoints = [];
+    const interior = getInteriorFloors(room, map);
+    const usable = interior.length >= 3 ? interior : room.floors;
+    const center = roomCenter(room);
+    const used = new Set<string>();
+
+    switch (room.tag) {
+      case "entry": {
+        room.spawnPoints.push({ x: center.x, y: center.y, type: "player" });
+        used.add(`${center.x},${center.y}`);
+        const itemSpots = pickSpawnPositions(
+          usable,
+          randInt(1, 2, rng),
+          rng,
+          used,
+        );
+        for (const s of itemSpots)
+          room.spawnPoints.push({ ...s, type: "item" });
+        break;
+      }
+      case "combat": {
+        const enemyCount = randInt(1, 3, rng);
+        const enemySpots = pickSpawnPositions(usable, enemyCount, rng, used);
+        for (const s of enemySpots) {
+          room.spawnPoints.push({ ...s, type: "enemy" });
+          used.add(`${s.x},${s.y}`);
+        }
+        if (rng() < 0.5) {
+          const itemSpots = pickSpawnPositions(usable, 1, rng, used);
+          for (const s of itemSpots)
+            room.spawnPoints.push({ ...s, type: "item" });
+        }
+        break;
+      }
+      case "loot": {
+        const itemCount = randInt(2, 4, rng);
+        const itemSpots = pickSpawnPositions(usable, itemCount, rng, used);
+        for (const s of itemSpots) {
+          room.spawnPoints.push({ ...s, type: "item" });
+          used.add(`${s.x},${s.y}`);
+        }
+        if (rng() < 0.3) {
+          const guardSpot = pickSpawnPositions(usable, 1, rng, used);
+          for (const s of guardSpot)
+            room.spawnPoints.push({ ...s, type: "enemy" });
+        }
+        break;
+      }
+      case "boss": {
+        room.spawnPoints.push({ x: center.x, y: center.y, type: "enemy" });
+        used.add(`${center.x},${center.y}`);
+        const rewardSpots = pickSpawnPositions(
+          usable,
+          randInt(1, 2, rng),
+          rng,
+          used,
+        );
+        for (const s of rewardSpots)
+          room.spawnPoints.push({ ...s, type: "item" });
+        break;
+      }
+      case "transition":
+      case "empty": {
+        if (rng() < 0.3) {
+          const spot = pickSpawnPositions(usable, 1, rng, used);
+          for (const s of spot) room.spawnPoints.push({ ...s, type: "item" });
+        }
+        break;
+      }
+    }
+  }
+}
+
 export function generateDungeon(
   configOrRng?: Partial<DungeonConfig> | (() => number),
 ): DungeonResult {
@@ -425,6 +713,8 @@ export function generateDungeon(
       width: w,
       height: h,
       floors: [],
+      tag: "empty",
+      spawnPoints: [],
     };
 
     if (rooms.some((r) => roomsOverlap(r, candidate, 1))) continue;
@@ -444,6 +734,8 @@ export function generateDungeon(
 
   addDeadEnds(map, rooms, config);
   ensureConnectivity(map, rooms, rng);
+  assignRoomTags(rooms, map, rng);
+  generateSpawnPoints(rooms, map, rng);
   assignWallCharacters(map);
   return { map, rooms };
 }
