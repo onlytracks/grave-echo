@@ -1,5 +1,5 @@
 import { World } from "./ecs/world.ts";
-import { generateDungeon } from "./map/dungeon-generator.ts";
+import { generateDungeon, roomCenter } from "./map/dungeon-generator.ts";
 import { AnsiRenderer } from "./renderer/ansi.ts";
 import { enableRawMode, disableRawMode } from "./input/input-handler.ts";
 import { Game } from "./game.ts";
@@ -14,16 +14,10 @@ function main(): void {
   const { map, rooms } = generateDungeon();
   const renderer = new AnsiRenderer();
 
-  const room1Center = {
-    x: Math.floor(rooms[0]!.x + rooms[0]!.width / 2),
-    y: Math.floor(rooms[0]!.y + rooms[0]!.height / 2),
-  };
+  const spawn = roomCenter(rooms[0]!);
 
   const player = world.createEntity();
-  world.addComponent(player, "Position", {
-    x: room1Center.x,
-    y: room1Center.y,
-  });
+  world.addComponent(player, "Position", { x: spawn.x, y: spawn.y });
   world.addComponent(player, "Renderable", {
     char: "@",
     fg: "brightWhite",
@@ -47,32 +41,20 @@ function main(): void {
   world.addComponent(player, "Equipment", { weapon: null });
   world.addComponent(player, "Senses", { vision: { range: 8 } });
 
-  const r0 = rooms[0]!;
-  createIronSword(world, r0.x + 1, r0.y + 1);
-  if (rooms.length > 1) {
-    const r1 = rooms[1]!;
-    createShortBow(
-      world,
-      Math.floor(r1.x + r1.width / 2),
-      Math.floor(r1.y + r1.height / 2) + 1,
-    );
-  }
-  if (rooms.length > 2) {
-    const r2 = rooms[2]!;
-    createHealingPotion(
-      world,
-      Math.floor(r2.x + r2.width / 2),
-      Math.floor(r2.y + r2.height / 2) + 1,
-    );
+  const itemFactories = [createIronSword, createShortBow, createHealingPotion];
+  for (let i = 0; i < itemFactories.length && i < rooms.length; i++) {
+    const room = rooms[i]!;
+    const c = roomCenter(room);
+    const offsetX = i === 0 ? room.x + 1 : c.x;
+    const offsetY = i === 0 ? room.y + 1 : c.y + 1;
+    itemFactories[i]!(world, offsetX, offsetY);
   }
 
   for (let i = 1; i < rooms.length; i++) {
-    const room = rooms[i]!;
-    const cx = Math.floor(room.x + room.width / 2);
-    const cy = Math.floor(room.y + room.height / 2);
+    const c = roomCenter(rooms[i]!);
 
     const goblin = world.createEntity();
-    world.addComponent(goblin, "Position", { x: cx, y: cy });
+    world.addComponent(goblin, "Position", { x: c.x, y: c.y });
     world.addComponent(goblin, "Renderable", {
       char: "g",
       fg: "red",
