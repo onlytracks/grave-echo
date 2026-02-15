@@ -71,7 +71,7 @@ describe("AI System — Charger", () => {
     expect(messages.getMessages().length).toBeGreaterThan(0);
   });
 
-  test("tries alternate axis when preferred is blocked", () => {
+  test("paths around wall when direct route blocked", () => {
     const { world, map, enemy, messages } = setup({
       enemyPos: { x: 3, y: 3 },
       targetPos: { x: 5, y: 3 },
@@ -81,7 +81,8 @@ describe("AI System — Charger", () => {
     resetAITurns(world);
     processAI(world, map, messages);
     const pos = world.getComponent(enemy, "Position")!;
-    expect(pos.x === 3).toBe(true);
+    // A* finds path around the wall, moving vertically first
+    expect(pos.y !== 3 || pos.x !== 3).toBe(true);
   });
 
   test("doesn't move when completely blocked", () => {
@@ -91,6 +92,7 @@ describe("AI System — Charger", () => {
       speed: 2,
     });
     map.setTile(4, 3, { ...WALL_TILE });
+    map.setTile(2, 3, { ...WALL_TILE });
     map.setTile(3, 2, { ...WALL_TILE });
     map.setTile(3, 4, { ...WALL_TILE });
     resetAITurns(world);
@@ -111,18 +113,53 @@ describe("AI System — Charger", () => {
     expect(pos.x).toBe(3);
   });
 
-  test("blocked by walls (uses MovementSystem)", () => {
+  test("navigates around walls with A* pathfinding", () => {
     const { world, map, enemy, messages } = setup({
       enemyPos: { x: 3, y: 5 },
       targetPos: { x: 7, y: 5 },
       speed: 3,
     });
     map.setTile(4, 5, { ...WALL_TILE });
-    map.setTile(3, 4, { ...WALL_TILE });
-    map.setTile(3, 6, { ...WALL_TILE });
     resetAITurns(world);
     processAI(world, map, messages);
     const pos = world.getComponent(enemy, "Position")!;
-    expect(pos).toEqual({ x: 3, y: 5 });
+    expect(pos.x !== 3 || pos.y !== 5).toBe(true);
+  });
+
+  test("navigates L-shaped corridor to reach target", () => {
+    const world = new World();
+    const map = new GameMap(10, 10, WALL_TILE);
+    const messages = new MessageLog();
+
+    // Carve an L-shaped corridor: row 1 from x=1..5, then col 5 from y=1..5
+    for (let x = 1; x <= 5; x++) map.setTile(x, 1, { ...FLOOR_TILE });
+    for (let y = 1; y <= 5; y++) map.setTile(5, y, { ...FLOOR_TILE });
+
+    const target = world.createEntity();
+    world.addComponent(target, "Position", { x: 5, y: 5 });
+    world.addComponent(target, "Collidable", { blocksMovement: true });
+    world.addComponent(target, "Health", { current: 20, max: 20 });
+    world.addComponent(target, "Stats", { strength: 5, defense: 2, speed: 3 });
+    world.addComponent(target, "Faction", { factionId: "player" });
+
+    const enemy = world.createEntity();
+    world.addComponent(enemy, "Position", { x: 1, y: 1 });
+    world.addComponent(enemy, "Stats", { strength: 3, defense: 1, speed: 3 });
+    world.addComponent(enemy, "TurnActor", {
+      hasActed: false,
+      movementRemaining: 3,
+      secondaryUsed: false,
+    });
+    world.addComponent(enemy, "AIControlled", {
+      pattern: "charger" as const,
+      targetEntity: target,
+    });
+    world.addComponent(enemy, "Collidable", { blocksMovement: true });
+    world.addComponent(enemy, "Faction", { factionId: "enemy" });
+
+    processAI(world, map, messages);
+    const pos = world.getComponent(enemy, "Position")!;
+    // Should move along the corridor toward the target
+    expect(pos.x).toBeGreaterThan(1);
   });
 });

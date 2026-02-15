@@ -6,6 +6,11 @@ import { attack } from "./combat.ts";
 import { updateAwareness } from "./sensory.ts";
 import { entityName } from "./entity-name.ts";
 import { getEquippedWeaponInfo, validateAttack } from "./targeting.ts";
+import { findPath, type PathNode } from "../../pathfinding/astar.ts";
+import {
+  makePassable,
+  findRetreatPath as findRetreatPathHelper,
+} from "../../pathfinding/helpers.ts";
 
 function getGoal(
   world: World,
@@ -30,6 +35,42 @@ function getGoal(
   return null;
 }
 
+const PATH_RECOMPUTE_INTERVAL = 3;
+
+function getOrComputePath(
+  world: World,
+  map: GameMap,
+  entity: Entity,
+  goalX: number,
+  goalY: number,
+  messages: MessageLog,
+): PathNode[] | null {
+  const ai = world.getComponent(entity, "AIControlled")!;
+  const pos = world.getComponent(entity, "Position")!;
+
+  const needsRecompute =
+    !ai.currentPath ||
+    ai.currentPath.length === 0 ||
+    ai.pathTargetX !== goalX ||
+    ai.pathTargetY !== goalY ||
+    (ai.pathAge ?? 0) >= PATH_RECOMPUTE_INTERVAL;
+
+  if (!needsRecompute) {
+    ai.pathAge = (ai.pathAge ?? 0) + 1;
+    return ai.currentPath!;
+  }
+
+  const isPassable = makePassable(world, map, entity, ai.targetEntity);
+  const path = findPath(pos.x, pos.y, goalX, goalY, isPassable);
+
+  ai.currentPath = path ?? undefined;
+  ai.pathTargetX = goalX;
+  ai.pathTargetY = goalY;
+  ai.pathAge = 0;
+
+  return path;
+}
+
 function moveToward(
   world: World,
   map: GameMap,
@@ -38,31 +79,28 @@ function moveToward(
   goalY: number,
   messages: MessageLog,
 ): void {
-  const pos = world.getComponent(entity, "Position")!;
   const turnActor = world.getComponent(entity, "TurnActor")!;
+  const ai = world.getComponent(entity, "AIControlled")!;
+
+  const path = getOrComputePath(world, map, entity, goalX, goalY, messages);
+  if (!path || path.length === 0) return;
 
   while (turnActor.movementRemaining > 0 && !turnActor.hasActed) {
-    const dx = goalX - pos.x;
-    const dy = goalY - pos.y;
-    if (dx === 0 && dy === 0) break;
+    const next = path[0];
+    if (!next) break;
 
-    const stepX = dx !== 0 ? Math.sign(dx) : 0;
-    const stepY = dy !== 0 ? Math.sign(dy) : 0;
-
-    let result: string = "blocked";
-    if (Math.abs(dx) >= Math.abs(dy)) {
-      result = tryMove(world, map, entity, pos.x + stepX, pos.y, messages);
-      if (result === "blocked" && stepY !== 0) {
-        result = tryMove(world, map, entity, pos.x, pos.y + stepY, messages);
+    const result = tryMove(world, map, entity, next.x, next.y, messages);
+    if (result === "moved") {
+      path.shift();
+      if (ai.currentPath === path) {
+        // Path modified in place; pathAge stays valid
       }
+    } else if (result === "attacked") {
+      break;
     } else {
-      result = tryMove(world, map, entity, pos.x, pos.y + stepY, messages);
-      if (result === "blocked" && stepX !== 0) {
-        result = tryMove(world, map, entity, pos.x + stepX, pos.y, messages);
-      }
+      ai.currentPath = undefined;
+      break;
     }
-
-    if (result === "blocked" || result === "attacked") break;
   }
 }
 
@@ -185,48 +223,28 @@ function retreatFrom(
   const turnActor = world.getComponent(entity, "TurnActor")!;
   let moved = false;
 
+  const isPassable = makePassable(world, map, entity, null);
+  const retreatPath = findRetreatPathHelper(
+    pos.x,
+    pos.y,
+    fromX,
+    fromY,
+    turnActor.movementRemaining + 2,
+    isPassable,
+  );
+
+  if (!retreatPath || retreatPath.length === 0) return false;
+
   while (turnActor.movementRemaining > 0 && !turnActor.hasActed) {
-    const dx = pos.x - fromX;
-    const dy = pos.y - fromY;
+    const next = retreatPath.shift();
+    if (!next) break;
 
-    const awayX = dx !== 0 ? Math.sign(dx) : 0;
-    const awayY = dy !== 0 ? Math.sign(dy) : 0;
-
-    let result: string = "blocked";
-
-    // Try moving directly away
-    if (awayX !== 0) {
-      result = tryMove(world, map, entity, pos.x + awayX, pos.y, messages);
+    const result = tryMove(world, map, entity, next.x, next.y, messages);
+    if (result === "moved") {
+      moved = true;
+    } else {
+      break;
     }
-    if (result === "blocked" && awayY !== 0) {
-      result = tryMove(world, map, entity, pos.x, pos.y + awayY, messages);
-    }
-    // Try perpendicular directions
-    if (result === "blocked") {
-      const perpDirs = [
-        { x: 0, y: 1 },
-        { x: 0, y: -1 },
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-      ].filter(
-        (d) =>
-          d.x !== -awayX && d.y !== -awayY && (d.x !== awayX || d.y !== awayY),
-      );
-      for (const d of perpDirs) {
-        result = tryMove(
-          world,
-          map,
-          entity,
-          pos.x + d.x,
-          pos.y + d.y,
-          messages,
-        );
-        if (result !== "blocked") break;
-      }
-    }
-
-    if (result === "blocked" || result === "attacked") break;
-    moved = true;
   }
 
   return moved;
@@ -407,6 +425,7 @@ function patrolIdle(
     const currentWp = ai.patrolPath[ai.patrolIndex ?? 0]!;
     if (pos.x === currentWp.x && pos.y === currentWp.y) {
       ai.patrolIndex = ((ai.patrolIndex ?? 0) + 1) % ai.patrolPath.length;
+      ai.currentPath = undefined;
       const nextWp = ai.patrolPath[ai.patrolIndex]!;
       messages.add(
         `[ai] ${name}: reached waypoint, next (${nextWp.x},${nextWp.y})`,
@@ -416,25 +435,26 @@ function patrolIdle(
       continue;
     }
 
-    const dx = currentWp.x - pos.x;
-    const dy = currentWp.y - pos.y;
-    const stepX = dx !== 0 ? Math.sign(dx) : 0;
-    const stepY = dy !== 0 ? Math.sign(dy) : 0;
+    const path = getOrComputePath(
+      world,
+      map,
+      entity,
+      currentWp.x,
+      currentWp.y,
+      messages,
+    );
+    if (!path || path.length === 0) break;
 
-    let result: string = "blocked";
-    if (Math.abs(dx) >= Math.abs(dy)) {
-      result = tryMove(world, map, entity, pos.x + stepX, pos.y, messages);
-      if (result === "blocked" && stepY !== 0) {
-        result = tryMove(world, map, entity, pos.x, pos.y + stepY, messages);
-      }
+    const next = path[0];
+    if (!next) break;
+
+    const result = tryMove(world, map, entity, next.x, next.y, messages);
+    if (result === "moved") {
+      path.shift();
     } else {
-      result = tryMove(world, map, entity, pos.x, pos.y + stepY, messages);
-      if (result === "blocked" && stepX !== 0) {
-        result = tryMove(world, map, entity, pos.x + stepX, pos.y, messages);
-      }
+      ai.currentPath = undefined;
+      break;
     }
-
-    if (result === "blocked" || result === "attacked") break;
   }
 
   if (pos.x !== startX || pos.y !== startY) {

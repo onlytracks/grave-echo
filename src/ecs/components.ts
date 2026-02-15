@@ -37,6 +37,10 @@ export interface AIControlled {
   targetEntity: number | null;
   patrolPath?: { x: number; y: number }[];
   patrolIndex?: number;
+  currentPath?: { x: number; y: number }[];
+  pathTargetX?: number;
+  pathTargetY?: number;
+  pathAge?: number;
 }
 
 export interface Faction {
