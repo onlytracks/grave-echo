@@ -115,7 +115,7 @@ export class Game {
     const size = this.renderer.getScreenSize();
 
     let gridW: number;
-    const gridH = Math.min(this.map.height + 2, size.height - 4);
+    const gridH = Math.min(this.map.height + 2, size.height - 6);
 
     if (this.debugVisible) {
       gridW = Math.floor(size.width * 0.6);
@@ -145,19 +145,31 @@ export class Game {
     }
 
     const players = this.world.query("PlayerControlled", "TurnActor", "Stats");
-    let statusText = "Arrow keys to move, Q to quit";
+    let statusText = "Arrows:move .:wait E:pickup S:swap U:use F1:debug Q:quit";
     if (players.length > 0) {
       const turnActor = this.world.getComponent(players[0]!, "TurnActor")!;
       const stats = this.world.getComponent(players[0]!, "Stats")!;
       const health = this.world.getComponent(players[0]!, "Health");
       const hpText = health ? `HP: ${health.current}/${health.max} | ` : "";
-      statusText = `${hpText}Moves: ${turnActor.movementRemaining}/${stats.speed} | '.' to end turn | Q to quit`;
+      const equipment = this.world.getComponent(players[0]!, "Equipment");
+      const weaponName =
+        equipment?.weapon !== null && equipment?.weapon !== undefined
+          ? (this.world.getComponent(equipment.weapon, "Item")?.name ?? "?")
+          : "fists";
+      statusText = `${hpText}Moves: ${turnActor.movementRemaining}/${stats.speed} | Wpn: ${weaponName} | Arrows:move .:wait E:pickup S:swap U:use F1:debug Q:quit`;
     }
     this.renderer.drawText(0, gridH, statusText, "gray");
 
+    this.renderer.drawText(
+      0,
+      gridH + 1,
+      "@:you  g:goblin  /:sword  ):bow  !:potion  #:wall  .:floor",
+      "gray",
+    );
+
     const messages = this.messages.getMessages();
     for (let i = 0; i < messages.length; i++) {
-      this.renderer.drawText(0, gridH + 1 + i, messages[i]!, "yellow");
+      this.renderer.drawText(0, gridH + 2 + i, messages[i]!, "yellow");
     }
 
     this.renderer.flush();
