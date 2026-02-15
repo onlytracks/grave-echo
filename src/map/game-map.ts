@@ -15,7 +15,7 @@ export interface Tile {
 export const FLOOR_TILE: Tile = {
   type: TileType.Floor,
   char: "·",
-  fg: "gray",
+  fg: "darkGray",
   bg: "black",
   walkable: true,
   transparent: true,

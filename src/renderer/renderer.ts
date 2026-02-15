@@ -8,6 +8,7 @@ export type Color =
   | "cyan"
   | "white"
   | "gray"
+  | "darkGray"
   | "brightRed"
   | "brightGreen"
   | "brightYellow"

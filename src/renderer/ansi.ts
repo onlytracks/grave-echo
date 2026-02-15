@@ -10,6 +10,7 @@ const COLOR_CODES: Record<Color, number> = {
   cyan: 6,
   white: 7,
   gray: 8,
+  darkGray: 236,
   brightRed: 9,
   brightGreen: 10,
   brightYellow: 11,
