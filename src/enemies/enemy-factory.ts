@@ -156,9 +156,9 @@ export function createThornbackGuardian(
     {
       char: "\u{040B}",
       fg: "brightGreen",
-      hp: 15,
+      hp: 12,
       str: 4,
-      def: 4,
+      def: 2,
       speed: 1,
       vision: 5,
       alertDuration: 3,

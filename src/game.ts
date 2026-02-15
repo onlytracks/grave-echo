@@ -398,7 +398,7 @@ export class Game {
           if (turnActor && !turnActor.hasActed) {
             this.world.addComponent(player, "Defending", {});
             this.messages.add(
-              "You brace for attack. (+2 defense, counterattack ready)",
+              "You brace for attack. (+3 defense, attack of opportunity ready)",
             );
           }
         }

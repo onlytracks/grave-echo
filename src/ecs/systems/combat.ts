@@ -30,7 +30,12 @@ export function performAttackDamage(
     weaponEntity !== null
       ? world.getComponent(weaponEntity, "Weapon")
       : undefined;
-  const baseDamage = weapon ? weapon.damage : attackerStats.strength;
+
+  const effectiveAttacker = getEffectiveStats(world, attacker);
+  const effectiveStr = effectiveAttacker?.strength ?? attackerStats.strength;
+  const baseDamage = weapon
+    ? weapon.damage + Math.floor(effectiveStr / 2)
+    : effectiveStr;
 
   const effectiveDefender = getEffectiveStats(world, defender);
   const totalDefense = effectiveDefender?.defense ?? defenderStats.defense;
@@ -81,7 +86,7 @@ export function attack(
       if (dist <= 1) {
         world.removeComponent(defender, "Defending");
         const defenderDisplay = getDisplayName(world, defender);
-        messages.add(`${defenderDisplay} counterattack!`);
+        messages.add(`${defenderDisplay} attack of opportunity!`);
         performAttackDamage(world, defender, attacker, messages, rng);
         const attackerHealth = world.getComponent(attacker, "Health");
         if (attackerHealth && attackerHealth.current <= 0) return;

@@ -51,12 +51,12 @@ function setupDefend() {
 
 describe("Defending", () => {
   describe("getEffectiveStats", () => {
-    test("grants +2 defense when Defending is present", () => {
+    test("grants +3 defense when Defending is present", () => {
       const { world, player } = setupDefend();
       const before = getEffectiveStats(world, player)!;
       world.addComponent(player, "Defending", {});
       const after = getEffectiveStats(world, player)!;
-      expect(after.defense).toBe(before.defense + 2);
+      expect(after.defense).toBe(before.defense + 3);
       expect(after.strength).toBe(before.strength);
       expect(after.speed).toBe(before.speed);
     });
@@ -71,7 +71,9 @@ describe("Defending", () => {
       attack(world, enemy, player, messages, rng);
 
       const log = messages.getRecent(10);
-      const counterIdx = log.findIndex((m) => m.includes("counterattack"));
+      const counterIdx = log.findIndex((m) =>
+        m.includes("attack of opportunity"),
+      );
       const attackIdx = log.findIndex((m) => m.includes("The g attacks You"));
       expect(counterIdx).toBeGreaterThanOrEqual(0);
       expect(attackIdx).toBeGreaterThan(counterIdx);
@@ -88,7 +90,7 @@ describe("Defending", () => {
       attack(world, enemy, player, messages, rng);
 
       const log = messages.getRecent(10);
-      const counterMsg = log.find((m) => m.includes("counterattack"));
+      const counterMsg = log.find((m) => m.includes("attack of opportunity"));
       expect(counterMsg).toBeUndefined();
       expect(world.hasComponent(player, "Defending")).toBe(true);
     });
@@ -103,7 +105,7 @@ describe("Defending", () => {
       attack(world, enemy, player, messages, rng);
 
       const log = messages.getRecent(10);
-      const counterMsg = log.find((m) => m.includes("counterattack"));
+      const counterMsg = log.find((m) => m.includes("attack of opportunity"));
       expect(counterMsg).toBeUndefined();
       expect(world.hasComponent(player, "Defending")).toBe(true);
     });

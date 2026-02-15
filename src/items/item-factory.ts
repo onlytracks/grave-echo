@@ -66,7 +66,7 @@ export function createBattleAxe(world: World, x: number, y: number): number {
     rarity: "common",
   });
   world.addComponent(e, "Weapon", {
-    damage: 7,
+    damage: 6,
     range: 1,
     weaponType: "axe",
     attackType: "melee",
@@ -162,7 +162,7 @@ export function createShortBow(world: World, x: number, y: number): number {
     rarity: "common",
   });
   world.addComponent(e, "Weapon", {
-    damage: 3,
+    damage: 4,
     range: 6,
     weaponType: "bow",
     attackType: "ranged",
@@ -185,7 +185,7 @@ export function createCrossbow(world: World, x: number, y: number): number {
     rarity: "common",
   });
   world.addComponent(e, "Weapon", {
-    damage: 5,
+    damage: 6,
     range: 8,
     weaponType: "crossbow",
     attackType: "ranged",
@@ -269,12 +269,12 @@ export function createChainmail(world: World, x: number, y: number): number {
   });
   world.addComponent(e, "Item", {
     name: "Chainmail",
-    weight: 10,
+    weight: 8,
     rarity: "common",
   });
   world.addComponent(e, "Armor", {
-    defense: 4,
-    speedPenalty: 1,
+    defense: 3,
+    speedPenalty: 0,
     armorType: "medium",
   });
   return e;
@@ -290,12 +290,12 @@ export function createPlateArmor(world: World, x: number, y: number): number {
   });
   world.addComponent(e, "Item", {
     name: "Plate Armor",
-    weight: 15,
+    weight: 12,
     rarity: "common",
   });
   world.addComponent(e, "Armor", {
     defense: 6,
-    speedPenalty: 2,
+    speedPenalty: 1,
     armorType: "heavy",
   });
   return e;
@@ -318,7 +318,7 @@ export function createIronRing(world: World, x: number, y: number): number {
   });
   world.addComponent(e, "Accessory", {
     slot: "accessory",
-    bonuses: [{ stat: "strength", value: 1 }],
+    bonuses: [{ stat: "strength", value: 2 }],
   });
   return e;
 }
@@ -338,7 +338,7 @@ export function createWardAmulet(world: World, x: number, y: number): number {
   });
   world.addComponent(e, "Accessory", {
     slot: "accessory",
-    bonuses: [{ stat: "defense", value: 1 }],
+    bonuses: [{ stat: "defense", value: 2 }],
   });
   return e;
 }
@@ -386,8 +386,8 @@ export function createHealingPotion(
     effectType: "heal",
     power: 8,
     duration: 0,
-    charges: 3,
-    maxCharges: 3,
+    charges: 2,
+    maxCharges: 2,
   });
   return e;
 }

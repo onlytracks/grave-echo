@@ -156,8 +156,8 @@ describe("Combat System", () => {
 
     // rng 0.5 → variance 0, no crit
     attack(world, attacker, defender, messages, () => 0.5);
-    // weapon damage 10 - defense 1 + 0 = 9
-    expect(world.getComponent(defender, "Health")!.current).toBe(-1);
+    // weapon damage 10 + floor(5/2)=2 - defense 1 + 0 = 11
+    expect(world.getComponent(defender, "Health")!.current).toBe(-3);
   });
 
   test("attack uses Stats.strength when no weapon equipped (unarmed)", () => {

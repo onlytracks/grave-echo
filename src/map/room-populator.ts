@@ -57,7 +57,7 @@ const ITEM_POOL: { factory: ItemFactory; weight: number }[] = [
   { factory: createWardAmulet, weight: 2 },
   { factory: createSwiftBoots, weight: 2 },
   // Consumables
-  { factory: createHealingPotion, weight: 5 },
+  { factory: createHealingPotion, weight: 3 },
   { factory: createSpeedPotion, weight: 2 },
   { factory: createStrengthPotion, weight: 2 },
   { factory: createDefensePotion, weight: 2 },
@@ -94,7 +94,7 @@ function createPlayer(world: World, x: number, y: number): number {
   world.addComponent(player, "Inventory", {
     items: [],
     totalWeight: 0,
-    carryCapacity: 30,
+    carryCapacity: 40,
   });
   world.addComponent(player, "Equipment", {
     weapon: null,
@@ -202,7 +202,7 @@ function createBoss(
   const scale = 1 + intensity * 0.5;
   const hp = Math.floor((20 + difficulty * 3) * scale);
   const str = Math.floor((5 + difficulty) * scale);
-  const def = Math.floor((3 + difficulty * 0.5) * scale);
+  const def = Math.floor((2 + difficulty * 0.5) * scale);
   const boss = world.createEntity();
   world.addComponent(boss, "Position", { x, y });
   world.addComponent(boss, "Renderable", {
