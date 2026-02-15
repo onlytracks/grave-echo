@@ -27,19 +27,74 @@ const KEYBINDINGS: Keybinding[] = [
   { key: "Esc / q", action: "Quit", category: "Other" },
 ];
 
-const GLYPH_LEGEND: GlyphEntry[] = [
-  { glyph: "@", label: "You", fg: "brightWhite" },
-  { glyph: "\u{0121}", label: "Goblin", fg: "red" },
-  { glyph: "\u{0120}", label: "Boss", fg: "brightRed" },
-  { glyph: "·", label: "Floor", fg: "gray" },
-  { glyph: "▓", label: "Wall", fg: "white" },
-  { glyph: "\u{F04E5}", label: "Weapon", fg: "cyan" },
-  { glyph: "\u{F0893}", label: "Armor", fg: "cyan" },
-  { glyph: "\u{1AAD}", label: "Ring", fg: "cyan" },
-  { glyph: "\u{0920}", label: "Amulet", fg: "cyan" },
-  { glyph: "\u{16C3}", label: "Boots", fg: "cyan" },
-  { glyph: "\u{13A3}", label: "Potion", fg: "green" },
+const GLYPH_GROUPS: { label: string; entries: GlyphEntry[] }[] = [
+  {
+    label: "Terrain",
+    entries: [
+      { glyph: "·", label: "Floor", fg: "gray" },
+      { glyph: "▓", label: "Wall", fg: "white" },
+    ],
+  },
+  {
+    label: "Entities",
+    entries: [
+      { glyph: "@", label: "You", fg: "brightWhite" },
+      { glyph: "\u{0121}", label: "Goblin", fg: "red" },
+      { glyph: "\u{0120}", label: "Boss", fg: "brightRed" },
+      { glyph: "a", label: "Archer", fg: "brightYellow" },
+      { glyph: "\u{040B}", label: "Guardian", fg: "brightGreen" },
+      { glyph: "\u{03DB}", label: "Skulker", fg: "green" },
+      { glyph: "\u{020E}", label: "Patrol", fg: "gray" },
+    ],
+  },
+  {
+    label: "Weapons",
+    entries: [
+      { glyph: "\u{F04E5}", label: "Sword", fg: "cyan" },
+      { glyph: "\u{F18BE}", label: "Sword+Shield", fg: "cyan" },
+      { glyph: "\u{F1842}", label: "Axe", fg: "cyan" },
+      { glyph: "\u{F1843}", label: "Mace+Shield", fg: "cyan" },
+      { glyph: "\u{F1845}", label: "Spear", fg: "cyan" },
+      { glyph: "\u{F08C8}", label: "Halberd", fg: "cyan" },
+      { glyph: "\u{F1841}", label: "Bow / Crossbow", fg: "cyan" },
+      { glyph: "\u{F1844}", label: "Staff", fg: "cyan" },
+      { glyph: "\u{F0AD0}", label: "Wand", fg: "cyan" },
+    ],
+  },
+  {
+    label: "Equipment",
+    entries: [
+      { glyph: "\u{F0893}", label: "Armor", fg: "cyan" },
+      { glyph: "\u{1AAD}", label: "Ring", fg: "cyan" },
+      { glyph: "\u{0920}", label: "Amulet", fg: "cyan" },
+      { glyph: "\u{16C3}", label: "Boots", fg: "cyan" },
+    ],
+  },
+  {
+    label: "Consumables",
+    entries: [{ glyph: "\u{13A3}", label: "Potion", fg: "green" }],
+  },
 ];
+
+function countGlyphLines(): number {
+  let lines = 0;
+  for (const group of GLYPH_GROUPS) {
+    lines += 1 + group.entries.length + 1; // header + entries + blank
+  }
+  return lines;
+}
+
+function countKeybindLines(): number {
+  const categories = new Map<string, number>();
+  for (const kb of KEYBINDINGS) {
+    categories.set(kb.category, (categories.get(kb.category) ?? 0) + 1);
+  }
+  let lines = 0;
+  for (const [, count] of categories) {
+    lines += 1 + count + 1;
+  }
+  return lines;
+}
 
 export function renderHelpScreen(renderer: Renderer, region: Region): void {
   const categories = new Map<string, Keybinding[]>();
@@ -53,23 +108,18 @@ export function renderHelpScreen(renderer: Renderer, region: Region): void {
   }
 
   const keybindColW = 32;
-  const glyphColW = 18;
+  const glyphColW = 22;
   const dividerW = 1;
-  const padding = 4; // 2 padding on each side
+  const padding = 4;
   const boxW = Math.min(
     keybindColW + dividerW + glyphColW + padding,
     region.width - 2,
   );
 
   const keyColW = 14;
-  let keybindLines = 0;
-  for (const [, bindings] of categories) {
-    keybindLines += 1 + bindings.length + 1;
-  }
-  // +1 header "Glyphs" +1 blank
-  const glyphContentLines = 1 + GLYPH_LEGEND.length + 1;
-  const contentLines = Math.max(keybindLines, glyphContentLines);
-  // +2 for box border top/bottom, +1 for footer
+  const keybindLines = countKeybindLines();
+  const glyphLines = countGlyphLines();
+  const contentLines = Math.max(keybindLines, glyphLines);
   const boxH = Math.min(contentLines + 3, region.height - 2);
 
   const boxX = region.x + Math.floor((region.width - boxW) / 2);
@@ -83,7 +133,6 @@ export function renderHelpScreen(renderer: Renderer, region: Region): void {
 
   renderer.drawBox(boxX, boxY, boxW, boxH, "Help");
 
-  // Left column: keybindings
   const leftX = boxX + 2;
   let row = boxY + 1;
 
@@ -103,27 +152,33 @@ export function renderHelpScreen(renderer: Renderer, region: Region): void {
     row++;
   }
 
-  // Vertical divider
   const divX = boxX + 2 + keybindColW;
   for (let y = boxY + 1; y < boxY + boxH - 1; y++) {
     renderer.drawCell(divX, y, "│", "gray", "black");
   }
 
-  // Right column: glyph legend
   const rightX = divX + 2;
   row = boxY + 1;
 
-  renderer.drawText(rightX, row, "Glyphs", "brightYellow");
-  row++;
-
-  for (const entry of GLYPH_LEGEND) {
+  for (const group of GLYPH_GROUPS) {
     if (row >= boxY + boxH - 1) break;
-    renderer.drawCell(rightX + 1, row, entry.glyph, entry.fg, "black");
-    renderer.drawText(rightX + 4, row, entry.label, "gray");
+    renderer.drawText(rightX, row, group.label, "brightYellow");
+    row++;
+
+    for (const entry of group.entries) {
+      if (row >= boxY + boxH - 1) break;
+      renderer.drawCell(rightX + 1, row, entry.glyph, entry.fg, "black");
+      renderer.drawText(
+        rightX + 4,
+        row,
+        entry.label.slice(0, glyphColW - 5),
+        "gray",
+      );
+      row++;
+    }
     row++;
   }
 
-  // Footer centered across full box
   const innerW = boxW - 4;
   const footer = "[?/Esc] close";
   const footerX = boxX + 2 + Math.floor((innerW - footer.length) / 2);
