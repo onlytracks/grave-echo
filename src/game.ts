@@ -40,6 +40,7 @@ import {
   renderSwapWeaponScreen,
   type SwapWeaponScreenState,
 } from "./ui/swap-weapon-screen.ts";
+import { renderHelpScreen } from "./renderer/panels/help-screen.ts";
 import { useConsumable } from "./ecs/systems/inventory.ts";
 import { computePlayerFOW } from "./ecs/systems/sensory.ts";
 import { clearStaleTarget } from "./ecs/systems/targeting.ts";
@@ -54,6 +55,7 @@ enum GameState {
   Inventory,
   UseItem,
   SwapWeapon,
+  Help,
 }
 
 export class Game {
@@ -326,7 +328,8 @@ export class Game {
       this.state === GameState.Running ||
       this.state === GameState.Inventory ||
       this.state === GameState.UseItem ||
-      this.state === GameState.SwapWeapon
+      this.state === GameState.SwapWeapon ||
+      this.state === GameState.Help
     ) {
       this.render();
 
@@ -342,6 +345,14 @@ export class Game {
 
       if (this.state === GameState.SwapWeapon) {
         await this.handleSwapWeaponMode();
+        continue;
+      }
+
+      if (this.state === GameState.Help) {
+        const event = await waitForInput();
+        if (event.type === "help" || event.type === "quit") {
+          this.state = GameState.Running;
+        }
         continue;
       }
 
@@ -370,6 +381,11 @@ export class Game {
 
       if (event.type === "swapWeapon") {
         this.openSwapWeapon();
+        continue;
+      }
+
+      if (event.type === "help") {
+        this.state = GameState.Help;
         continue;
       }
 
@@ -579,6 +595,10 @@ export class Game {
         this.swapWeaponScreen,
         layout.gameGrid,
       );
+    }
+
+    if (this.state === GameState.Help) {
+      renderHelpScreen(this.renderer, layout.gameGrid);
     }
 
     this.renderer.flush();

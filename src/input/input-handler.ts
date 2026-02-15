@@ -9,6 +9,7 @@ export type InputEvent =
   | { type: "toggleDebug" }
   | { type: "cycleTarget" }
   | { type: "attack" }
+  | { type: "help" }
   | { type: "unknown" };
 
 export function parseInput(data: Buffer): InputEvent {
@@ -79,6 +80,9 @@ export function parseInput(data: Buffer): InputEvent {
     }
     if (data[0] === 0x69) {
       return { type: "inventory" };
+    }
+    if (data[0] === 0x3f) {
+      return { type: "help" };
     }
   }
 

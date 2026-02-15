@@ -45,4 +45,8 @@ describe("parseInput", () => {
   test("i key parses to inventory", () => {
     expect(parseInput(Buffer.from([0x69]))).toEqual({ type: "inventory" });
   });
+
+  test("? key parses to help", () => {
+    expect(parseInput(Buffer.from([0x3f]))).toEqual({ type: "help" });
+  });
 });
