@@ -9,7 +9,7 @@ interface Keybinding {
 
 const KEYBINDINGS: Keybinding[] = [
   { key: "Arrow Keys", action: "Move", category: "Movement" },
-  { key: ".", action: "Pass turn", category: "Movement" },
+  { key: ".", action: "Defend / end turn", category: "Movement" },
   { key: "Tab", action: "Cycle targets", category: "Combat" },
   { key: "Space", action: "Attack target", category: "Combat" },
   { key: "e", action: "Pick up item", category: "Items" },
