@@ -38,6 +38,20 @@ export function isPlayerTurnOver(world: World): boolean {
   return turnActor.hasActed;
 }
 
+export function resetIdleTurn(world: World): void {
+  const players = world.query("PlayerControlled", "TurnActor", "Awareness");
+  for (const player of players) {
+    const awareness = world.getComponent(player, "Awareness")!;
+    if (awareness.state !== "idle") continue;
+    const turnActor = world.getComponent(player, "TurnActor")!;
+    const stats = world.getComponent(player, "Stats");
+    const penalty = getEncumbrancePenalty(world, player);
+    turnActor.hasActed = false;
+    turnActor.movementRemaining = Math.max(0, (stats?.speed ?? 1) - penalty);
+    turnActor.secondaryUsed = false;
+  }
+}
+
 export function getAIEntities(world: World): Entity[] {
   return world.query("AIControlled", "TurnActor");
 }

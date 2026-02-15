@@ -109,6 +109,37 @@ export function updateAwareness(
   }
 }
 
+export function updatePlayerAwareness(
+  world: World,
+  map: GameMap,
+  visible: Set<string>,
+): void {
+  const players = world.query("PlayerControlled", "Awareness");
+  if (players.length === 0) return;
+
+  const player = players[0]!;
+  const awareness = world.getComponent(player, "Awareness")!;
+
+  const entities = world.query("Position", "Faction", "Awareness");
+  let anyAlert = false;
+
+  for (const entity of entities) {
+    if (entity === player) continue;
+    const faction = world.getComponent(entity, "Faction")!;
+    if (faction.factionId === "player" || faction.factionId === "neutral")
+      continue;
+    const entityAwareness = world.getComponent(entity, "Awareness")!;
+    if (entityAwareness.state !== "alert") continue;
+    const entityPos = world.getComponent(entity, "Position")!;
+    if (visible.has(`${entityPos.x},${entityPos.y}`)) {
+      anyAlert = true;
+      break;
+    }
+  }
+
+  awareness.state = anyAlert ? "alert" : "idle";
+}
+
 export function computePlayerFOW(world: World, map: GameMap): Set<string> {
   const players = world.query("PlayerControlled", "Position", "Senses");
   if (players.length === 0) return new Set();
@@ -123,6 +154,8 @@ export function computePlayerFOW(world: World, map: GameMap): Set<string> {
     const [x, y] = key.split(",").map(Number);
     map.markExplored(x!, y!);
   }
+
+  updatePlayerAwareness(world, map, visible);
 
   return visible;
 }

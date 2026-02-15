@@ -5,6 +5,7 @@ import {
   hasLineOfSight,
   computeVisibleTiles,
   updateAwareness,
+  updatePlayerAwareness,
   computePlayerFOW,
 } from "../sensory.ts";
 
@@ -249,6 +250,99 @@ describe("computePlayerFOW", () => {
     expect(map.isExplored(7, 5)).toBe(true);
     // new location also explored
     expect(map.isExplored(25, 25)).toBe(true);
+  });
+});
+
+describe("updatePlayerAwareness", () => {
+  function setupPlayerAwarenessWorld() {
+    const world = new World();
+    const map = makeOpenMap(20, 20);
+
+    const player = world.createEntity();
+    world.addComponent(player, "Position", { x: 5, y: 5 });
+    world.addComponent(player, "PlayerControlled", {});
+    world.addComponent(player, "Faction", { factionId: "player" });
+    world.addComponent(player, "Senses", { vision: { range: 8 } });
+    world.addComponent(player, "Awareness", {
+      state: "idle",
+      lastKnownTarget: null,
+      alertDuration: 0,
+      turnsWithoutTarget: 0,
+    });
+
+    return { world, map, player };
+  }
+
+  function addEnemy(
+    world: World,
+    x: number,
+    y: number,
+    state: "idle" | "alert",
+  ) {
+    const enemy = world.createEntity();
+    world.addComponent(enemy, "Position", { x, y });
+    world.addComponent(enemy, "Faction", { factionId: "enemy" });
+    world.addComponent(enemy, "Awareness", {
+      state,
+      lastKnownTarget: null,
+      alertDuration: 3,
+      turnsWithoutTarget: 0,
+    });
+    return enemy;
+  }
+
+  test("player with no visible alert enemies stays idle", () => {
+    const { world, map } = setupPlayerAwarenessWorld();
+    addEnemy(world, 8, 5, "idle");
+    const visible = computeVisibleTiles(map, 5, 5, 8);
+    updatePlayerAwareness(world, map, visible);
+    const players = world.query("PlayerControlled", "Awareness");
+    const awareness = world.getComponent(players[0]!, "Awareness")!;
+    expect(awareness.state).toBe("idle");
+  });
+
+  test("player with a visible alert enemy becomes alerted", () => {
+    const { world, map } = setupPlayerAwarenessWorld();
+    addEnemy(world, 8, 5, "alert");
+    const visible = computeVisibleTiles(map, 5, 5, 8);
+    updatePlayerAwareness(world, map, visible);
+    const players = world.query("PlayerControlled", "Awareness");
+    const awareness = world.getComponent(players[0]!, "Awareness")!;
+    expect(awareness.state).toBe("alert");
+  });
+
+  test("player transitions back to idle when alert enemy dies", () => {
+    const { world, map } = setupPlayerAwarenessWorld();
+    const enemy = addEnemy(world, 8, 5, "alert");
+    const visible = computeVisibleTiles(map, 5, 5, 8);
+    updatePlayerAwareness(world, map, visible);
+
+    const players = world.query("PlayerControlled", "Awareness");
+    const awareness = world.getComponent(players[0]!, "Awareness")!;
+    expect(awareness.state).toBe("alert");
+
+    world.destroyEntity(enemy);
+    updatePlayerAwareness(world, map, visible);
+    expect(awareness.state).toBe("idle");
+  });
+
+  test("alert enemy out of vision range does not alert player", () => {
+    const { world, map } = setupPlayerAwarenessWorld();
+    addEnemy(world, 18, 18, "alert");
+    const visible = computeVisibleTiles(map, 5, 5, 8);
+    updatePlayerAwareness(world, map, visible);
+    const players = world.query("PlayerControlled", "Awareness");
+    const awareness = world.getComponent(players[0]!, "Awareness")!;
+    expect(awareness.state).toBe("idle");
+  });
+
+  test("computePlayerFOW also updates player awareness", () => {
+    const { world, map } = setupPlayerAwarenessWorld();
+    addEnemy(world, 8, 5, "alert");
+    computePlayerFOW(world, map);
+    const players = world.query("PlayerControlled", "Awareness");
+    const awareness = world.getComponent(players[0]!, "Awareness")!;
+    expect(awareness.state).toBe("alert");
   });
 });
 

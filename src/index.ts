@@ -40,6 +40,12 @@ function main(): void {
   });
   world.addComponent(player, "Equipment", { weapon: null });
   world.addComponent(player, "Senses", { vision: { range: 8 } });
+  world.addComponent(player, "Awareness", {
+    state: "idle",
+    lastKnownTarget: null,
+    alertDuration: 0,
+    turnsWithoutTarget: 0,
+  });
 
   const itemFactories = [createIronSword, createShortBow, createHealingPotion];
   for (let i = 0; i < itemFactories.length && i < rooms.length; i++) {

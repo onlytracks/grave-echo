@@ -32,6 +32,15 @@ export function renderPlayerStats(
   const turn = world.getComponent(pid, "TurnActor");
   const equip = world.getComponent(pid, "Equipment");
   const inv = world.getComponent(pid, "Inventory");
+  const awareness = world.getComponent(pid, "Awareness");
+
+  if (awareness) {
+    if (awareness.state === "alert") {
+      line("[ALERT!]", "brightRed");
+    } else {
+      line("[Exploring]", "gray");
+    }
+  }
 
   if (health) {
     const ratio = health.max > 0 ? health.current / health.max : 0;

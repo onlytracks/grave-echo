@@ -14,6 +14,7 @@ import {
   endPlayerTurn,
   isPlayerTurnOver,
   resetAITurns,
+  resetIdleTurn,
 } from "./ecs/systems/turn.ts";
 import { processAI } from "./ecs/systems/ai.ts";
 import { processHealth } from "./ecs/systems/health.ts";
@@ -65,6 +66,7 @@ export class Game {
       } else {
         handlePlayerInput(this.world, this.map, event, this.messages);
         this.visibleTiles = computePlayerFOW(this.world, this.map);
+        resetIdleTurn(this.world);
       }
 
       const healthResult = processHealth(this.world, this.messages);
