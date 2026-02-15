@@ -52,18 +52,26 @@ export function renderHelpScreen(renderer: Renderer, region: Region): void {
     list.push(kb);
   }
 
+  const keybindColW = 32;
+  const glyphColW = 18;
+  const dividerW = 1;
+  const padding = 4; // 2 padding on each side
+  const boxW = Math.min(
+    keybindColW + dividerW + glyphColW + padding,
+    region.width - 2,
+  );
+
   const keyColW = 14;
   let keybindLines = 0;
   for (const [, bindings] of categories) {
     keybindLines += 1 + bindings.length + 1;
   }
+  // +1 header "Glyphs" +1 blank
+  const glyphContentLines = 1 + GLYPH_LEGEND.length + 1;
+  const contentLines = Math.max(keybindLines, glyphContentLines);
+  // +2 for box border top/bottom, +1 for footer
+  const boxH = Math.min(contentLines + 3, region.height - 2);
 
-  // 1 divider + 1 "Glyphs" header + glyph entries + 1 blank + 1 footer
-  const glyphLines = 1 + 1 + GLYPH_LEGEND.length + 1;
-  const totalLines = keybindLines + glyphLines + 1;
-
-  const boxW = Math.min(36, region.width - 2);
-  const boxH = Math.min(totalLines + 3, region.height - 2);
   const boxX = region.x + Math.floor((region.width - boxW) / 2);
   const boxY = region.y + Math.floor((region.height - boxH) / 2);
 
@@ -75,48 +83,49 @@ export function renderHelpScreen(renderer: Renderer, region: Region): void {
 
   renderer.drawBox(boxX, boxY, boxW, boxH, "Help");
 
-  const cx = boxX + 2;
-  const innerW = boxW - 4;
+  // Left column: keybindings
+  const leftX = boxX + 2;
   let row = boxY + 1;
 
   for (const [category, bindings] of categories) {
     if (row >= boxY + boxH - 1) break;
-    renderer.drawText(cx, row, category, "brightYellow");
+    renderer.drawText(leftX, row, category, "brightYellow");
     row++;
 
     for (const kb of bindings) {
       if (row >= boxY + boxH - 1) break;
       const keyStr = `  ${kb.key}`;
       const pad = Math.max(1, keyColW - keyStr.length);
-      const line = (keyStr + " ".repeat(pad) + kb.action).slice(0, innerW);
-      renderer.drawText(cx, row, line, "gray");
+      const line = (keyStr + " ".repeat(pad) + kb.action).slice(0, keybindColW);
+      renderer.drawText(leftX, row, line, "gray");
       row++;
     }
     row++;
   }
 
-  // Divider
-  if (row < boxY + boxH - 1) {
-    const divider = "─".repeat(innerW);
-    renderer.drawText(cx, row, divider, "gray");
-    row++;
+  // Vertical divider
+  const divX = boxX + 2 + keybindColW;
+  for (let y = boxY + 1; y < boxY + boxH - 1; y++) {
+    renderer.drawCell(divX, y, "│", "gray", "black");
   }
 
-  // Glyph legend
-  if (row < boxY + boxH - 1) {
-    renderer.drawText(cx, row, "Glyphs", "brightYellow");
-    row++;
-  }
+  // Right column: glyph legend
+  const rightX = divX + 2;
+  row = boxY + 1;
+
+  renderer.drawText(rightX, row, "Glyphs", "brightYellow");
+  row++;
 
   for (const entry of GLYPH_LEGEND) {
     if (row >= boxY + boxH - 1) break;
-    renderer.drawCell(cx + 2, row, entry.glyph, entry.fg, "black");
-    const label = entry.label.slice(0, innerW - 6);
-    renderer.drawText(cx + 5, row, label, "gray");
+    renderer.drawCell(rightX + 1, row, entry.glyph, entry.fg, "black");
+    renderer.drawText(rightX + 4, row, entry.label, "gray");
     row++;
   }
 
+  // Footer centered across full box
+  const innerW = boxW - 4;
   const footer = "[?/Esc] close";
-  const footerX = cx + Math.floor((innerW - footer.length) / 2);
+  const footerX = boxX + 2 + Math.floor((innerW - footer.length) / 2);
   renderer.drawText(footerX, boxY + boxH - 2, footer, "gray");
 }
