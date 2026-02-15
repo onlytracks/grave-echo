@@ -254,16 +254,13 @@ export class Game {
     this.renderer.flush();
 
     while (true) {
-      const event = await waitForInput();
-      if (event.type === "quit") return "quit";
-      if (event.type === "unknown") {
-        // waitForInput returns "unknown" for Enter key — check raw
-        // Enter is handled below via pass-through
+      const { raw } = await waitForRawInput();
+      if (raw.length === 1 && (raw[0] === 0x1b || raw[0] === 0x71)) {
+        return "quit";
       }
-      // Enter key is parsed as "unknown" since 0x0d isn't mapped
-      // We need to accept it. The simplest: treat any non-quit key as restart
-      // except for specific quit keys (q/ESC already return "quit")
-      return "restart";
+      if (raw.length === 1 && raw[0] === 0x0d) {
+        return "restart";
+      }
     }
   }
 
