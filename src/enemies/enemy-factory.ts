@@ -162,7 +162,7 @@ export function createThornbackGuardian(
       speed: 1,
       vision: 5,
       alertDuration: 3,
-      ai: { pattern: "guardian", targetEntity: player },
+      ai: { pattern: "guardian", targetEntity: player, canDrinkPotions: true },
     },
   );
 

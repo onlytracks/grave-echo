@@ -220,6 +220,7 @@ function createBoss(
   world.addComponent(boss, "AIControlled", {
     pattern: "charger",
     targetEntity: player,
+    canDrinkPotions: true,
   });
   world.addComponent(boss, "Collidable", { blocksMovement: true });
   world.addComponent(boss, "Faction", { factionId: "enemy" });

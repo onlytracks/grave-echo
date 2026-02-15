@@ -41,6 +41,8 @@ export interface AIControlled {
   pathTargetX?: number;
   pathTargetY?: number;
   pathAge?: number;
+  hasUsedPotion?: boolean;
+  canDrinkPotions?: boolean;
 }
 
 export interface Faction {

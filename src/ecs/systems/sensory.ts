@@ -109,7 +109,10 @@ export function updateAwareness(
     if (awareness.turnsWithoutTarget > awareness.alertDuration) {
       awareness.state = "idle";
       awareness.lastKnownTarget = null;
-      if (ai) ai.targetEntity = null;
+      if (ai) {
+        ai.targetEntity = null;
+        ai.hasUsedPotion = false;
+      }
     }
   }
 

@@ -12,6 +12,60 @@ import {
   findRetreatPath as findRetreatPathHelper,
 } from "../../pathfinding/helpers.ts";
 
+function getDisplayName(world: World, entity: Entity): string {
+  if (world.hasComponent(entity, "PlayerControlled")) return "You";
+  const renderable = world.getComponent(entity, "Renderable");
+  if (renderable) return `The ${renderable.char}`;
+  return "Something";
+}
+
+function shouldDrinkPotion(world: World, entity: Entity): boolean {
+  const ai = world.getComponent(entity, "AIControlled")!;
+  if (!ai.canDrinkPotions) return false;
+  if (ai.hasUsedPotion) return false;
+
+  const health = world.getComponent(entity, "Health");
+  if (!health || health.current / health.max > 0.4) return false;
+
+  const inventory = world.getComponent(entity, "Inventory");
+  if (!inventory) return false;
+
+  return inventory.items.some((id) => {
+    const c = world.getComponent(id, "Consumable");
+    return c?.effectType === "heal";
+  });
+}
+
+function drinkPotion(world: World, entity: Entity, messages: MessageLog): void {
+  const health = world.getComponent(entity, "Health")!;
+  const inventory = world.getComponent(entity, "Inventory")!;
+  const ai = world.getComponent(entity, "AIControlled")!;
+
+  const potionId = inventory.items.find((id) => {
+    const c = world.getComponent(id, "Consumable");
+    return c?.effectType === "heal";
+  });
+  if (!potionId) return;
+
+  const consumable = world.getComponent(potionId, "Consumable")!;
+  const healed = Math.min(consumable.power, health.max - health.current);
+  health.current += healed;
+  ai.hasUsedPotion = true;
+
+  const name = entityName(world, entity);
+  messages.add(
+    `${getDisplayName(world, entity)} drinks a potion! (+${healed} HP)`,
+  );
+  messages.add(
+    `[ai] ${name}: drank potion, healed ${healed}, hp=${health.current}/${health.max}`,
+    "debug",
+  );
+
+  const turnActor = world.getComponent(entity, "TurnActor")!;
+  turnActor.hasActed = true;
+  turnActor.movementRemaining = 0;
+}
+
 function getGoal(
   world: World,
   entity: Entity,
@@ -518,6 +572,11 @@ export function processAI(
           world.getComponent(entity, "Position")!.y,
         );
       }
+      continue;
+    }
+
+    if (shouldDrinkPotion(world, entity)) {
+      drinkPotion(world, entity, messages);
       continue;
     }
 
