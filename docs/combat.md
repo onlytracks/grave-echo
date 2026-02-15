@@ -155,11 +155,28 @@ Exact stats TBD — these establish the categories and tactical roles.
   equips from inventory
 - This allows mid-combat role shifts (melee → ranged) at the cost of a secondary action
 
+## AI Awareness
+
+AI entities do not act until they detect a target. Detection is driven by the **sensory
+system** (see `docs/senses.md`). Each AI entity has an awareness state:
+
+- **Idle:** Entity has not detected anything. Does nothing on its turn.
+- **Alert:** Entity has detected a hostile target via a sense (vision for now). Actively
+  pursues and attacks using its behavior pattern.
+
+When an alert entity loses sight of its target, it continues pursuing the last known
+position for a number of turns (`alertDuration`), then returns to idle.
+
+This means enemies in distant rooms don't chase the player through corridors they can't
+see into. The player can observe idle enemies and choose when to engage.
+
 ## AI Behavior Patterns
 
 All non-player entities use behavior trees to decide how to spend their turn. Since every
 entity follows the same action economy, behavior trees simply choose: what to target, whether
 to use a secondary action, where to move, and what primary action to take.
+
+**Behavior patterns only execute when the entity is `alert`.** An idle entity skips its turn.
 
 | Pattern  | Description                                            |
 | -------- | ------------------------------------------------------ |
@@ -195,10 +212,13 @@ tree is a property of the entity, not its type.
 The grid itself is the tactical layer. Terrain and positioning replace dodge-rolling.
 
 - **Chokepoints:** Doorways and corridors limit how many enemies can reach you
-- **Line-of-sight:** Pillars and walls block ranged attacks — for both sides
+- **Line-of-sight:** Pillars and walls block ranged attacks and vision — for both sides
+  (see `docs/senses.md` for the vision/LOS system)
+- **Fog of war:** The player only sees tiles within their vision range. Enemies in
+  unexplored areas are invisible until detected.
 - **Elevation?** TBD — could high ground grant range/damage bonus
 - **Destructible terrain?** TBD — future extension
-- **Light/dark?** TBD — limited visibility in unlit areas could affect targeting range
+- **Light/dark?** TBD — limited visibility in unlit areas could affect vision range
 
 ## Open Questions
 
@@ -210,6 +230,6 @@ The grid itself is the tactical layer. Terrain and positioning replace dodge-rol
 - How does speed interact with heavy armor? Flat reduction or percentage?
 - Should there be a "flee" mechanic — disengage from adjacent enemies with a penalty?
 - Multi-tile entities (bosses) — how do they work on the grid?
-- Entity faction system — how do entities know who to target? Player faction, corruption
-  faction, neutral faction? Faction hostility matrix?
+- ~~Entity faction system~~ — **Decided: Faction component with player/enemy/neutral.
+  Same faction = friendly, different non-neutral factions = hostile. Implemented.**
 - Turn order among non-player entities — fixed order, speed-based, or random?

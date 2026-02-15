@@ -69,6 +69,8 @@
 | MessageSource    | text, type (echo message, lore, tutorial)           | Echo messages     |
 | Faction          | faction ID                                          | All living        |
 | Collidable       | blocks movement (true/false)                        | Walls, entities   |
+| Senses           | vision range (future: hearing, smell)               | All perceiving    |
+| Awareness        | state (idle/alert), lastKnownTarget, alertDuration  | Enemies, NPCs     |
 
 Items are entities too — a sword in your inventory is an entity with Item + Weapon +
 possibly MagicalBonuses components. This means items can exist on the ground, in inventory,
@@ -86,6 +88,7 @@ or equipped, all using the same entity.
 | InventorySystem | Inventory + Item             | Manages weight, equip/unequip               |
 | HealthSystem    | Health                       | Checks for death, triggers death events     |
 | TurnSystem      | TurnActor                    | Manages turn order, resets movement/actions |
+| SensorySystem   | Senses + Position            | Calculates vision, updates awareness/FOW    |
 | RenderSystem    | Position + Renderable        | Draws entities to the game grid             |
 | PortalSystem    | Position + Portal            | Handles region transitions                  |
 | MessageSystem   | MessageSource                | Displays echo messages when near            |
@@ -94,16 +97,19 @@ or equipped, all using the same entity.
 
 ```
 1. TurnSystem: set player as active, reset movement points
-2. InputSystem: wait for player input, translate to actions
+2. SensorySystem: calculate player vision, update fog of war
+3. InputSystem: wait for player input, translate to actions
    - Secondary action? → execute via relevant system
-   - Movement? → MovementSystem validates and moves, decrement points
+   - Movement? → MovementSystem validates and moves, recalculate vision
    - Primary action? → CombatSystem/InventorySystem/etc → end player turn
    - Pass? → end player turn
-3. TurnSystem: iterate non-player TurnActors
-4. AISystem: for each AI entity, decide and execute actions
-   - Same flow: optional secondary → movement → optional primary
-5. TurnSystem: new round, back to step 1
-6. RenderSystem: redraw after each action (player or AI)
+4. TurnSystem: iterate non-player TurnActors
+5. SensorySystem: for each AI entity, calculate vision, update awareness
+6. AISystem: for each AI entity, check awareness state, decide and execute actions
+   - Idle? → skip turn
+   - Alert? → optional secondary → movement → optional primary
+7. TurnSystem: new round, back to step 1
+8. RenderSystem: redraw after each action (player or AI), respecting fog of war
 ```
 
 ## Renderer
@@ -283,6 +289,7 @@ grave-echo/
 │   │       ├── inventory.ts
 │   │       ├── health.ts
 │   │       ├── turn.ts
+│   │       ├── sensory.ts
 │   │       ├── portal.ts
 │   │       └── message.ts
 │   ├── renderer/
@@ -315,7 +322,7 @@ grave-echo/
 
 - Testing strategy — unit tests for systems? Integration tests for turn flow? (bun test)
 - Map representation — 2D array of tile entities? Separate tile map + entity layer?
-- FOV/visibility — should the player only see nearby tiles? Fog of war?
+- ~~FOV/visibility~~ — **Decided: yes. Vision-based fog of war. See docs/senses.md**
 - How large is the game grid viewport? Fixed size or adaptive to terminal?
 - Pathfinding algorithm for AI movement — A\* or simpler?
 - Should we support terminal resize mid-game?
