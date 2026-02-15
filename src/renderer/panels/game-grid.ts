@@ -46,7 +46,13 @@ export function renderGameGrid(
           tile.bg as Color,
         );
       } else if (map.isExplored(mapX, mapY)) {
-        renderer.drawCell(innerX + dx, innerY + dy, tile.char, "gray", "black");
+        renderer.drawCell(
+          innerX + dx,
+          innerY + dy,
+          tile.char,
+          "darkGray",
+          "black",
+        );
       }
     }
   }
