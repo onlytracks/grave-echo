@@ -140,9 +140,9 @@ minimum damage = 1 (attacks always do at least 1)
 | Mace     | Melee  | 1     | Bonus vs armored?                 |
 | Spear    | Reach  | 2     | Can attack without being adjacent |
 | Halberd  | Reach  | 2     | Higher damage reach weapon        |
-| Bow      | Ranged | 6?    | Requires line-of-sight, ammo TBD  |
+| Bow      | Ranged | 6?    | Requires line-of-sight            |
 | Crossbow | Ranged | 8?    | Higher damage, lower fire rate?   |
-| Staff    | Ranged | 4?    | Magical ranged attack, no ammo    |
+| Staff    | Ranged | 4?    | Magical ranged attack             |
 | Wand     | Ranged | 3?    | Shorter range, magical effects    |
 
 Exact stats TBD — these establish the categories and tactical roles.
@@ -202,8 +202,7 @@ The grid itself is the tactical layer. Terrain and positioning replace dodge-rol
 
 ## Open Questions
 
-- Ammo for ranged weapons — limited or unlimited? Limited adds resource management,
-  unlimited simplifies
+- ~~Ammo for ranged weapons~~ — **Decided: no ammo. Ranged weapons attack freely.**
 - Should "hold/defend" grant a mechanical bonus (e.g., +2 defense until next turn)?
 - Do entities drop their equipped gear on death, or is loot separate from what they
   were using? (If yes, the player can see what an enemy is carrying and decide if it's

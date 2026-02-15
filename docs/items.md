@@ -34,9 +34,9 @@ A weapon item represents the full combat loadout for that style:
 | Mace & Shield  | One-hand mace + shield  | 1     | Moderate damage, +defense, bonus vs armored? |
 | Spear          | Two-handed spear        | 2     | Reach, moderate damage                       |
 | Halberd        | Two-handed polearm      | 2     | Reach, high damage                           |
-| Bow            | Bow + quiver            | 6     | Ranged, moderate damage                      |
-| Crossbow       | Crossbow + bolts        | 8     | Ranged, high damage                          |
-| Staff          | Magical staff           | 4     | Ranged magical attack, no ammo               |
+| Bow            | Bow                     | 6     | Ranged, moderate damage                      |
+| Crossbow       | Crossbow                | 8     | Ranged, high damage                          |
+| Staff          | Magical staff           | 4     | Ranged magical attack                        |
 | Wand           | Magical wand            | 3     | Short ranged, magical effects                |
 
 This means "swap weapon" as a secondary action can shift an entity's entire combat role
