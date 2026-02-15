@@ -3,7 +3,7 @@ import type { GameMap } from "../../map/game-map.ts";
 import type { InputEvent } from "../../input/input-handler.ts";
 import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
-import { pickup, swapToNextWeapon, useConsumable } from "./inventory.ts";
+import { pickup, swapToNextWeapon } from "./inventory.ts";
 import { cycleTarget, attemptRangedAttack } from "./targeting.ts";
 
 const DIRECTION_DELTA = {
@@ -76,29 +76,6 @@ export function handlePlayerInput(
       turnActor.secondaryUsed = true;
     }
     return result;
-  }
-
-  if (event.type === "useItem" && messages) {
-    const turnActor = world.getComponent(player, "TurnActor");
-    if (turnActor?.hasActed) return false;
-
-    const inventory = world.getComponent(player, "Inventory");
-    if (!inventory) return false;
-
-    const consumableId = inventory.items.find((id) =>
-      world.hasComponent(id, "Consumable"),
-    );
-    if (consumableId === undefined) {
-      messages.add("No consumables in inventory.");
-      return false;
-    }
-
-    const used = useConsumable(world, player, consumableId, messages);
-    if (used && turnActor) {
-      turnActor.hasActed = true;
-      turnActor.movementRemaining = 0;
-    }
-    return used;
   }
 
   return false;

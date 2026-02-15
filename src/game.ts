@@ -28,6 +28,13 @@ import {
   renderInventoryScreen,
   type InventoryScreenState,
 } from "./ui/inventory-screen.ts";
+import {
+  createUseItemScreenState,
+  handleUseItemKey,
+  renderUseItemScreen,
+  type UseItemScreenState,
+} from "./ui/use-item-screen.ts";
+import { useConsumable } from "./ecs/systems/inventory.ts";
 import { computePlayerFOW } from "./ecs/systems/sensory.ts";
 import { clearStaleTarget } from "./ecs/systems/targeting.ts";
 import { generateDungeon } from "./map/dungeon-generator.ts";
@@ -39,6 +46,7 @@ enum GameState {
   Dead,
   Quit,
   Inventory,
+  UseItem,
 }
 
 export class Game {
@@ -51,6 +59,7 @@ export class Game {
   private turnCounter = 0;
   private killCount = 0;
   private inventoryScreen: InventoryScreenState | null = null;
+  private useItemScreen: UseItemScreenState | null = null;
 
   constructor(
     private renderer: Renderer,
@@ -140,6 +149,28 @@ export class Game {
     this.state = GameState.Running;
   }
 
+  private openUseItem(): void {
+    const player = this.getPlayerEntity();
+    if (!player) return;
+    const turnActor = this.world.getComponent(player, "TurnActor");
+    if (turnActor?.hasActed) {
+      this.messages.add("Already acted this turn.");
+      return;
+    }
+    const state = createUseItemScreenState(this.world, player);
+    if (!state) {
+      this.messages.add("No consumables in inventory.");
+      return;
+    }
+    this.useItemScreen = state;
+    this.state = GameState.UseItem;
+  }
+
+  private closeUseItem(): void {
+    this.useItemScreen = null;
+    this.state = GameState.Running;
+  }
+
   private async handleInventoryMode(): Promise<void> {
     const player = this.getPlayerEntity();
     if (!player || !this.inventoryScreen) {
@@ -175,15 +206,51 @@ export class Game {
     }
   }
 
+  private async handleUseItemMode(): Promise<void> {
+    const player = this.getPlayerEntity();
+    if (!player || !this.useItemScreen) {
+      this.closeUseItem();
+      return;
+    }
+
+    const { raw } = await waitForRawInput();
+    if (raw.length !== 1) return;
+
+    const result = handleUseItemKey(raw[0]!, this.useItemScreen);
+
+    if (result === "cancel") {
+      this.closeUseItem();
+      return;
+    }
+
+    if (result !== null) {
+      const used = useConsumable(this.world, player, result, this.messages);
+      if (used) {
+        const turnActor = this.world.getComponent(player, "TurnActor");
+        if (turnActor) {
+          turnActor.hasActed = true;
+          turnActor.movementRemaining = 0;
+        }
+      }
+      this.closeUseItem();
+    }
+  }
+
   private async playUntilDeath(): Promise<void> {
     while (
       this.state === GameState.Running ||
-      this.state === GameState.Inventory
+      this.state === GameState.Inventory ||
+      this.state === GameState.UseItem
     ) {
       this.render();
 
       if (this.state === GameState.Inventory) {
         await this.handleInventoryMode();
+        continue;
+      }
+
+      if (this.state === GameState.UseItem) {
+        await this.handleUseItemMode();
         continue;
       }
 
@@ -202,6 +269,11 @@ export class Game {
 
       if (event.type === "inventory") {
         this.openInventory();
+        continue;
+      }
+
+      if (event.type === "useItem") {
+        this.openUseItem();
         continue;
       }
 
@@ -383,6 +455,15 @@ export class Game {
           layout.gameGrid,
         );
       }
+    }
+
+    if (this.state === GameState.UseItem && this.useItemScreen) {
+      renderUseItemScreen(
+        this.renderer,
+        this.world,
+        this.useItemScreen,
+        layout.gameGrid,
+      );
     }
 
     this.renderer.flush();
