@@ -7,6 +7,8 @@ export type InputEvent =
   | { type: "useItem" }
   | { type: "inventory" }
   | { type: "toggleDebug" }
+  | { type: "cycleTarget" }
+  | { type: "attack" }
   | { type: "unknown" };
 
 export function parseInput(data: Buffer): InputEvent {
@@ -56,6 +58,12 @@ export function parseInput(data: Buffer): InputEvent {
   if (data.length === 1) {
     if (data[0] === 0x1b || data[0] === 0x71) {
       return { type: "quit" };
+    }
+    if (data[0] === 0x09) {
+      return { type: "cycleTarget" };
+    }
+    if (data[0] === 0x20) {
+      return { type: "attack" };
     }
     if (data[0] === 0x2e) {
       return { type: "pass" };

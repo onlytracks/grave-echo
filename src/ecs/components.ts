@@ -134,6 +134,10 @@ export interface Awareness {
   turnsWithoutTarget: number;
 }
 
+export interface TargetSelection {
+  targetEntity: number | null;
+}
+
 export interface ComponentMap {
   Position: Position;
   Renderable: Renderable;
@@ -154,6 +158,7 @@ export interface ComponentMap {
   Equipment: Equipment;
   Senses: Senses;
   Awareness: Awareness;
+  TargetSelection: TargetSelection;
 }
 
 export type ComponentType = keyof ComponentMap;

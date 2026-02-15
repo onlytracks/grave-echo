@@ -2,8 +2,10 @@ import type { World, Entity } from "../world.ts";
 import type { GameMap } from "../../map/game-map.ts";
 import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
+import { attack } from "./combat.ts";
 import { updateAwareness } from "./sensory.ts";
 import { entityName } from "./entity-name.ts";
+import { getEquippedWeaponInfo, validateAttack } from "./targeting.ts";
 
 function chargerBehavior(
   world: World,
@@ -40,6 +42,18 @@ function chargerBehavior(
 
   const startX = pos.x;
   const startY = pos.y;
+
+  if (ai.targetEntity !== null && goalSource === "target") {
+    const validation = validateAttack(world, map, entity, ai.targetEntity);
+    if (validation.valid) {
+      attack(world, entity, ai.targetEntity, messages);
+      messages.add(
+        `[ai] ${name}: ranged attack on target at (${goalX},${goalY})`,
+        "debug",
+      );
+      return;
+    }
+  }
 
   while (turnActor.movementRemaining > 0 && !turnActor.hasActed) {
     const dx = goalX - pos.x;

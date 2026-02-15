@@ -104,6 +104,7 @@ function createPlayer(world: World, x: number, y: number): number {
     alertDuration: 0,
     turnsWithoutTarget: 0,
   });
+  world.addComponent(player, "TargetSelection", { targetEntity: null });
   return player;
 }
 

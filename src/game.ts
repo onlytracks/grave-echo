@@ -29,6 +29,7 @@ import {
   type InventoryScreenState,
 } from "./ui/inventory-screen.ts";
 import { computePlayerFOW } from "./ecs/systems/sensory.ts";
+import { clearStaleTarget } from "./ecs/systems/targeting.ts";
 import { generateDungeon } from "./map/dungeon-generator.ts";
 import { populateRooms, type PopulatorConfig } from "./map/room-populator.ts";
 
@@ -96,6 +97,20 @@ export class Game {
     this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");
     startPlayerTurn(this.world, this.messages);
     this.visibleTiles = computePlayerFOW(this.world, this.map, this.messages);
+  }
+
+  private clearStaleTargets(): void {
+    const player = this.getPlayerEntity();
+    if (player !== undefined) {
+      clearStaleTarget(this.world, player, this.visibleTiles);
+    }
+  }
+
+  private getPlayerTargetEntity(): number | null {
+    const player = this.getPlayerEntity();
+    if (player === undefined) return null;
+    const ts = this.world.getComponent(player, "TargetSelection");
+    return ts?.targetEntity ?? null;
   }
 
   private getPlayerEntity(): number | undefined {
@@ -179,10 +194,18 @@ export class Game {
         continue;
       }
 
+      this.clearStaleTargets();
+
       if (event.type === "pass") {
         endPlayerTurn(this.world, this.messages);
       } else {
-        handlePlayerInput(this.world, this.map, event, this.messages);
+        handlePlayerInput(
+          this.world,
+          this.map,
+          event,
+          this.messages,
+          this.visibleTiles,
+        );
         this.visibleTiles = computePlayerFOW(
           this.world,
           this.map,
@@ -304,10 +327,16 @@ export class Game {
       layout.gameGrid,
       viewport,
       this.visibleTiles,
+      this.getPlayerTargetEntity(),
     );
 
     renderPlayerStats(this.renderer, this.world, layout.playerStats);
-    renderTargetInfo(this.renderer, this.world, layout.targetInfo, null);
+    renderTargetInfo(
+      this.renderer,
+      this.world,
+      layout.targetInfo,
+      this.getPlayerTargetEntity(),
+    );
     renderEquipment(this.renderer, this.world, layout.equipment);
 
     if (this.debugVisible) {

@@ -4,6 +4,7 @@ import type { InputEvent } from "../../input/input-handler.ts";
 import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
 import { pickup, swapToNextWeapon, useConsumable } from "./inventory.ts";
+import { cycleTarget, attemptRangedAttack } from "./targeting.ts";
 
 const DIRECTION_DELTA = {
   up: { dx: 0, dy: -1 },
@@ -17,10 +18,24 @@ export function handlePlayerInput(
   map: GameMap,
   event: InputEvent,
   messages?: MessageLog,
+  visibleTiles?: Set<string>,
 ): boolean {
   const players = world.query("PlayerControlled", "Position");
   if (players.length === 0) return false;
   const player = players[0]!;
+
+  if (event.type === "cycleTarget") {
+    if (visibleTiles) {
+      cycleTarget(world, player, visibleTiles);
+    }
+    return false;
+  }
+
+  if (event.type === "attack" && messages) {
+    const turnActor = world.getComponent(player, "TurnActor");
+    if (turnActor?.hasActed) return false;
+    return attemptRangedAttack(world, map, player, messages);
+  }
 
   if (event.type === "move") {
     const pos = world.getComponent(player, "Position")!;
