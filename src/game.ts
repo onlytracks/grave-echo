@@ -170,6 +170,21 @@ export class Game {
       this.messages.add("No consumables in inventory.");
       return;
     }
+
+    if (state.consumables.length === 1) {
+      const used = useConsumable(
+        this.world,
+        player,
+        state.consumables[0]!,
+        this.messages,
+      );
+      if (used && turnActor) {
+        turnActor.hasActed = true;
+        turnActor.movementRemaining = 0;
+      }
+      return;
+    }
+
     this.useItemScreen = state;
     this.state = GameState.UseItem;
   }
