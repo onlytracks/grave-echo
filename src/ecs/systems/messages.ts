@@ -11,7 +11,7 @@ export class MessageLog {
   private maxMessages: number;
   private currentTurn = 0;
 
-  constructor(maxMessages = 100) {
+  constructor(maxMessages = 2000) {
     this.maxMessages = maxMessages;
   }
 

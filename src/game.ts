@@ -32,6 +32,7 @@ import { computePlayerFOW } from "./ecs/systems/sensory.ts";
 import { clearStaleTarget } from "./ecs/systems/targeting.ts";
 import { generateDungeon } from "./map/dungeon-generator.ts";
 import { populateRooms, type PopulatorConfig } from "./map/room-populator.ts";
+import { writeRunLog } from "./logging/log-writer.ts";
 
 enum GameState {
   Running,
@@ -63,6 +64,7 @@ export class Game {
       this.initNewRun();
       await this.playUntilDeath();
       if (this.state === GameState.Quit) break;
+      if (this.state === GameState.Dead) this.writeLog("death");
       const action = await this.showGameOver();
       if (action === "quit") break;
     }
@@ -97,6 +99,14 @@ export class Game {
     this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");
     startPlayerTurn(this.world, this.messages);
     this.visibleTiles = computePlayerFOW(this.world, this.map, this.messages);
+  }
+
+  private writeLog(result: "death" | "quit"): void {
+    writeRunLog(this.messages.getAllMessagesWithTurns(), {
+      turns: this.turnCounter,
+      kills: this.killCount,
+      result,
+    });
   }
 
   private clearStaleTargets(): void {
@@ -180,6 +190,7 @@ export class Game {
       const event = await waitForInput();
 
       if (event.type === "quit") {
+        this.writeLog("quit");
         this.state = GameState.Quit;
         break;
       }
