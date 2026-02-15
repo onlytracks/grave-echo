@@ -59,7 +59,7 @@ export class Game {
 
   private initNewRun(): void {
     this.world = new World();
-    const { map, rooms } = generateDungeon();
+    const { map, rooms, graph } = generateDungeon();
     this.map = map;
     this.messages = new MessageLog();
     this.state = GameState.Running;
@@ -71,8 +71,14 @@ export class Game {
       `[spawn] Dungeon generated: ${rooms.length} rooms, ${map.width}x${map.height}`,
       "debug",
     );
-    const tagSummary = rooms.map((r, i) => `${i}:${r.tag}`).join(", ");
+    const tagSummary = rooms
+      .map((r, i) => `${i}:${r.tag}(d${r.depth})`)
+      .join(", ");
     this.messages.add(`[spawn] Room tags: ${tagSummary}`, "debug");
+    this.messages.add(
+      `[spawn] Critical path: ${graph.criticalPath.join(" → ")}`,
+      "debug",
+    );
 
     populateRooms(this.world, rooms, this.populatorConfig, this.messages);
 

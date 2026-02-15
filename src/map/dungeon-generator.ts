@@ -1,5 +1,6 @@
 import { GameMap, FLOOR_TILE, WALL_TILE } from "./game-map.ts";
 import { assignWallCharacters } from "./tile-utils.ts";
+import { buildRoomGraph, type RoomGraph } from "./room-graph.ts";
 
 export type RoomTag =
   | "entry"
@@ -23,6 +24,8 @@ export interface Room {
   floors: { x: number; y: number }[];
   tag: RoomTag;
   spawnPoints: SpawnPoint[];
+  depth: number;
+  intensity: number;
 }
 
 export interface DungeonConfig {
@@ -37,6 +40,7 @@ export interface DungeonConfig {
 export interface DungeonResult {
   map: GameMap;
   rooms: Room[];
+  graph: RoomGraph;
 }
 
 const DEFAULT_CONFIG: DungeonConfig = {
@@ -429,68 +433,9 @@ function getInteriorFloors(
   });
 }
 
-function buildAdjacency(rooms: Room[], map: GameMap): Map<number, Set<number>> {
-  const adj = new Map<number, Set<number>>();
-  for (let i = 0; i < rooms.length; i++) adj.set(i, new Set());
-
-  const roomIndex = new Map<string, number>();
-  for (let i = 0; i < rooms.length; i++) {
-    for (const f of rooms[i]!.floors) {
-      roomIndex.set(`${f.x},${f.y}`, i);
-    }
-  }
-
-  for (let i = 0; i < rooms.length; i++) {
-    const center = roomCenter(rooms[i]!);
-    const visited = new Set<string>();
-    const queue = [center];
-    visited.add(`${center.x},${center.y}`);
-
-    while (queue.length > 0) {
-      const { x, y } = queue.shift()!;
-      for (const [dx, dy] of [
-        [0, 1],
-        [0, -1],
-        [1, 0],
-        [-1, 0],
-      ] as const) {
-        const nx = x + dx;
-        const ny = y + dy;
-        const key = `${nx},${ny}`;
-        if (visited.has(key) || !map.isWalkable(nx, ny)) continue;
-        visited.add(key);
-        const ri = roomIndex.get(key);
-        if (ri !== undefined && ri !== i) {
-          adj.get(i)!.add(ri);
-          adj.get(ri)!.add(i);
-        } else {
-          queue.push({ x: nx, y: ny });
-        }
-      }
-    }
-  }
-  return adj;
-}
-
-function bfsDistances(adj: Map<number, Set<number>>, start: number): number[] {
-  const dist = new Array(adj.size).fill(-1) as number[];
-  dist[start] = 0;
-  const queue = [start];
-  while (queue.length > 0) {
-    const cur = queue.shift()!;
-    for (const neighbor of adj.get(cur)!) {
-      if (dist[neighbor] === -1) {
-        dist[neighbor] = dist[cur]! + 1;
-        queue.push(neighbor);
-      }
-    }
-  }
-  return dist;
-}
-
 export function assignRoomTags(
   rooms: Room[],
-  map: GameMap,
+  graph: RoomGraph,
   rng: () => number,
 ): void {
   if (rooms.length === 0) return;
@@ -499,61 +444,66 @@ export function assignRoomTags(
 
   if (rooms.length === 1) return;
 
-  const adj = buildAdjacency(rooms, map);
-  const distances = bfsDistances(adj, 0);
+  const adj = graph.adjacency;
 
   let bossIdx = -1;
-  let bestBossScore = -1;
+  let maxDepth = -1;
   for (let i = 1; i < rooms.length; i++) {
     const area = rooms[i]!.floors.length;
-    const dist = distances[i] ?? 0;
-    const score = area * 2 + dist * 10;
-    if (score > bestBossScore) {
-      bestBossScore = score;
+    const depth = rooms[i]!.depth;
+    const score = area * 2 + depth * 10;
+    if (score > maxDepth) {
+      maxDepth = score;
       bossIdx = i;
     }
   }
   rooms[bossIdx]!.tag = "boss";
 
-  const deadEnds: number[] = [];
-  for (let i = 1; i < rooms.length; i++) {
-    if (i === bossIdx) continue;
-    if ((adj.get(i)?.size ?? 0) <= 1) deadEnds.push(i);
-  }
-
-  let lootCount = 0;
-  const maxLoot = Math.min(2, Math.floor((rooms.length - 2) / 3) + 1);
-  for (const idx of deadEnds) {
-    if (lootCount < maxLoot) {
-      rooms[idx]!.tag = "loot";
-      lootCount++;
-    } else {
-      rooms[idx]!.tag = "empty";
-    }
-  }
+  const criticalSet = new Set(graph.criticalPath);
 
   const smallThreshold = Math.floor(
     (rooms.reduce((sum, r) => sum + r.floors.length, 0) / rooms.length) * 0.6,
   );
 
-  for (let i = 1; i < rooms.length; i++) {
-    if (rooms[i]!.tag) continue;
+  let lootCount = 0;
+  const maxLoot = Math.min(2, Math.floor((rooms.length - 2) / 3) + 1);
 
-    if (
-      rooms[i]!.floors.length < smallThreshold &&
-      (adj.get(i)?.size ?? 0) >= 2
-    ) {
+  for (let i = 1; i < rooms.length; i++) {
+    if (i === bossIdx) continue;
+
+    const intensity = rooms[i]!.intensity;
+    const onCritPath = criticalSet.has(i);
+    const isDeadEnd = (adj.get(i)?.size ?? 0) <= 1;
+    const isSmall = rooms[i]!.floors.length < smallThreshold;
+
+    if (onCritPath) {
+      if (isSmall && (adj.get(i)?.size ?? 0) >= 2) {
+        rooms[i]!.tag = "transition";
+      } else {
+        rooms[i]!.tag = "combat";
+      }
+      continue;
+    }
+
+    if (isDeadEnd && lootCount < maxLoot && intensity < 0.6) {
+      rooms[i]!.tag = "loot";
+      lootCount++;
+      continue;
+    }
+
+    if (intensity < 0.3 && lootCount < maxLoot && rng() < 0.4) {
+      rooms[i]!.tag = "loot";
+      lootCount++;
+      continue;
+    }
+
+    if (isSmall && (adj.get(i)?.size ?? 0) >= 2) {
       rooms[i]!.tag = "transition";
       continue;
     }
 
-    if (
-      lootCount < maxLoot &&
-      rooms[i]!.floors.length < smallThreshold &&
-      rng() < 0.3
-    ) {
-      rooms[i]!.tag = "loot";
-      lootCount++;
+    if (intensity < 0.2 && !onCritPath && rng() < 0.3) {
+      rooms[i]!.tag = "empty";
       continue;
     }
 
@@ -632,13 +582,19 @@ export function generateSpawnPoints(
         break;
       }
       case "combat": {
-        const enemyCount = randInt(1, 3, rng);
+        const minEnemies =
+          room.intensity < 0.3 ? 1 : room.intensity < 0.6 ? 1 : 2;
+        const maxEnemies =
+          room.intensity < 0.3 ? 2 : room.intensity < 0.6 ? 3 : 3;
+        const enemyCount = randInt(minEnemies, maxEnemies, rng);
         const enemySpots = pickSpawnPositions(usable, enemyCount, rng, used);
         for (const s of enemySpots) {
           room.spawnPoints.push({ ...s, type: "enemy" });
           used.add(`${s.x},${s.y}`);
         }
-        if (rng() < 0.5) {
+        const itemChance =
+          room.intensity < 0.3 ? 0.6 : room.intensity < 0.6 ? 0.4 : 0.2;
+        if (rng() < itemChance) {
           const itemSpots = pickSpawnPositions(usable, 1, rng, used);
           for (const s of itemSpots)
             room.spawnPoints.push({ ...s, type: "item" });
@@ -646,7 +602,9 @@ export function generateSpawnPoints(
         break;
       }
       case "loot": {
-        const itemCount = randInt(2, 4, rng);
+        const baseItems =
+          room.intensity < 0.3 ? 2 : room.intensity < 0.6 ? 3 : 4;
+        const itemCount = randInt(baseItems, baseItems + 1, rng);
         const itemSpots = pickSpawnPositions(usable, itemCount, rng, used);
         for (const s of itemSpots) {
           room.spawnPoints.push({ ...s, type: "item" });
@@ -715,6 +673,8 @@ export function generateDungeon(
       floors: [],
       tag: "empty",
       spawnPoints: [],
+      depth: 0,
+      intensity: 0,
     };
 
     if (rooms.some((r) => roomsOverlap(r, candidate, 1))) continue;
@@ -734,8 +694,42 @@ export function generateDungeon(
 
   addDeadEnds(map, rooms, config);
   ensureConnectivity(map, rooms, rng);
-  assignRoomTags(rooms, map, rng);
+
+  const graph = buildRoomGraph(rooms, map);
+  assignRoomTags(rooms, graph, rng);
+
+  // Rebuild critical path after boss tag assignment
+  const bossIdx = rooms.findIndex((r) => r.tag === "boss");
+  if (bossIdx > 0) {
+    graph.criticalPath.length = 0;
+    const path = (() => {
+      const prev = new Map<number, number>();
+      const visited = new Set<number>([0]);
+      const queue = [0];
+      while (queue.length > 0) {
+        const cur = queue.shift()!;
+        if (cur === bossIdx) break;
+        for (const neighbor of graph.adjacency.get(cur)!) {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            prev.set(neighbor, cur);
+            queue.push(neighbor);
+          }
+        }
+      }
+      const p: number[] = [];
+      let c = bossIdx;
+      while (c !== 0) {
+        p.unshift(c);
+        c = prev.get(c)!;
+      }
+      p.unshift(0);
+      return p;
+    })();
+    graph.criticalPath.push(...path);
+  }
+
   generateSpawnPoints(rooms, map, rng);
   assignWallCharacters(map);
-  return { map, rooms };
+  return { map, rooms, graph };
 }

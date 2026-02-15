@@ -69,10 +69,12 @@ function createGoblin(
   y: number,
   player: number,
   difficulty: number,
+  intensity: number = 0,
 ): number {
-  const hp = Math.floor(8 + difficulty * 1.5);
-  const str = Math.floor(3 + difficulty * 0.5);
-  const def = Math.floor(1 + difficulty * 0.3);
+  const scale = 1 + intensity * 0.5;
+  const hp = Math.floor((8 + difficulty * 1.5) * scale);
+  const str = Math.floor((3 + difficulty * 0.5) * scale);
+  const def = Math.floor((1 + difficulty * 0.3) * scale);
   const goblin = world.createEntity();
   world.addComponent(goblin, "Position", { x, y });
   world.addComponent(goblin, "Renderable", {
@@ -113,10 +115,12 @@ function createBoss(
   y: number,
   player: number,
   difficulty: number,
+  intensity: number = 1,
 ): number {
-  const hp = Math.floor(20 + difficulty * 3);
-  const str = Math.floor(5 + difficulty);
-  const def = Math.floor(3 + difficulty * 0.5);
+  const scale = 1 + intensity * 0.5;
+  const hp = Math.floor((20 + difficulty * 3) * scale);
+  const str = Math.floor((5 + difficulty) * scale);
+  const def = Math.floor((3 + difficulty * 0.5) * scale);
   const boss = world.createEntity();
   world.addComponent(boss, "Position", { x, y });
   world.addComponent(boss, "Renderable", {
@@ -173,9 +177,10 @@ export function populateRooms(
               sp.y,
               playerEntity,
               config.difficulty,
+              room.intensity,
             );
             messages?.add(
-              `[spawn] G#${boss} at (${sp.x},${sp.y}) [boss]`,
+              `[spawn] G#${boss} at (${sp.x},${sp.y}) [boss, intensity=${room.intensity.toFixed(2)}]`,
               "debug",
             );
           } else {
@@ -185,9 +190,10 @@ export function populateRooms(
               sp.y,
               playerEntity,
               config.difficulty,
+              room.intensity,
             );
             messages?.add(
-              `[spawn] g#${goblin} at (${sp.x},${sp.y}) [charger]`,
+              `[spawn] g#${goblin} at (${sp.x},${sp.y}) [charger, intensity=${room.intensity.toFixed(2)}]`,
               "debug",
             );
           }
