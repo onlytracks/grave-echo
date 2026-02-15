@@ -3,7 +3,7 @@ import type { GameMap } from "../../map/game-map.ts";
 import type { InputEvent } from "../../input/input-handler.ts";
 import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
-import { pickup, swapToNextWeapon } from "./inventory.ts";
+import { pickup } from "./inventory.ts";
 import { cycleTarget, attemptRangedAttack } from "./targeting.ts";
 
 const DIRECTION_DELTA = {
@@ -66,19 +66,6 @@ export function handlePlayerInput(
     }
     messages.add("Nothing to pick up here.");
     return false;
-  }
-
-  if (event.type === "swapWeapon" && messages) {
-    const turnActor = world.getComponent(player, "TurnActor");
-    if (turnActor?.secondaryUsed) {
-      messages.add("Already used secondary action this turn.");
-      return false;
-    }
-    const result = swapToNextWeapon(world, player, messages);
-    if (result && turnActor) {
-      turnActor.secondaryUsed = true;
-    }
-    return result;
   }
 
   return false;

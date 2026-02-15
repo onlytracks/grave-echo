@@ -34,6 +34,12 @@ import {
   renderUseItemScreen,
   type UseItemScreenState,
 } from "./ui/use-item-screen.ts";
+import {
+  createSwapWeaponScreenState,
+  handleSwapWeaponKey,
+  renderSwapWeaponScreen,
+  type SwapWeaponScreenState,
+} from "./ui/swap-weapon-screen.ts";
 import { useConsumable } from "./ecs/systems/inventory.ts";
 import { computePlayerFOW } from "./ecs/systems/sensory.ts";
 import { clearStaleTarget } from "./ecs/systems/targeting.ts";
@@ -47,6 +53,7 @@ enum GameState {
   Quit,
   Inventory,
   UseItem,
+  SwapWeapon,
 }
 
 export class Game {
@@ -60,6 +67,7 @@ export class Game {
   private killCount = 0;
   private inventoryScreen: InventoryScreenState | null = null;
   private useItemScreen: UseItemScreenState | null = null;
+  private swapWeaponScreen: SwapWeaponScreenState | null = null;
 
   constructor(
     private renderer: Renderer,
@@ -236,11 +244,74 @@ export class Game {
     }
   }
 
+  private openSwapWeapon(): void {
+    const player = this.getPlayerEntity();
+    if (!player) return;
+    const turnActor = this.world.getComponent(player, "TurnActor");
+    if (turnActor?.secondaryUsed) {
+      this.messages.add("Already used secondary action this turn.");
+      return;
+    }
+
+    const state = createSwapWeaponScreenState(this.world, player);
+    if (!state) {
+      this.messages.add("No other weapons.");
+      return;
+    }
+
+    if (state.weapons.length <= 2) {
+      const other = state.weapons.find((id) => id !== state.equippedWeapon)!;
+      const equipment = this.world.getComponent(player, "Equipment")!;
+      equipment.weapon = other;
+      const item = this.world.getComponent(other, "Item");
+      this.messages.add(`You swap to ${item?.name ?? "weapon"}`);
+      if (turnActor) turnActor.secondaryUsed = true;
+      return;
+    }
+
+    this.swapWeaponScreen = state;
+    this.state = GameState.SwapWeapon;
+  }
+
+  private closeSwapWeapon(): void {
+    this.swapWeaponScreen = null;
+    this.state = GameState.Running;
+  }
+
+  private async handleSwapWeaponMode(): Promise<void> {
+    const player = this.getPlayerEntity();
+    if (!player || !this.swapWeaponScreen) {
+      this.closeSwapWeapon();
+      return;
+    }
+
+    const { raw } = await waitForRawInput();
+    if (raw.length !== 1) return;
+
+    const result = handleSwapWeaponKey(raw[0]!, this.swapWeaponScreen);
+
+    if (result === "cancel") {
+      this.closeSwapWeapon();
+      return;
+    }
+
+    if (result !== null) {
+      const equipment = this.world.getComponent(player, "Equipment")!;
+      equipment.weapon = result;
+      const item = this.world.getComponent(result, "Item");
+      this.messages.add(`You swap to ${item?.name ?? "weapon"}`);
+      const turnActor = this.world.getComponent(player, "TurnActor");
+      if (turnActor) turnActor.secondaryUsed = true;
+      this.closeSwapWeapon();
+    }
+  }
+
   private async playUntilDeath(): Promise<void> {
     while (
       this.state === GameState.Running ||
       this.state === GameState.Inventory ||
-      this.state === GameState.UseItem
+      this.state === GameState.UseItem ||
+      this.state === GameState.SwapWeapon
     ) {
       this.render();
 
@@ -251,6 +322,11 @@ export class Game {
 
       if (this.state === GameState.UseItem) {
         await this.handleUseItemMode();
+        continue;
+      }
+
+      if (this.state === GameState.SwapWeapon) {
+        await this.handleSwapWeaponMode();
         continue;
       }
 
@@ -274,6 +350,11 @@ export class Game {
 
       if (event.type === "useItem") {
         this.openUseItem();
+        continue;
+      }
+
+      if (event.type === "swapWeapon") {
+        this.openSwapWeapon();
         continue;
       }
 
@@ -472,6 +553,15 @@ export class Game {
         this.renderer,
         this.world,
         this.useItemScreen,
+        layout.gameGrid,
+      );
+    }
+
+    if (this.state === GameState.SwapWeapon && this.swapWeaponScreen) {
+      renderSwapWeaponScreen(
+        this.renderer,
+        this.world,
+        this.swapWeaponScreen,
         layout.gameGrid,
       );
     }
