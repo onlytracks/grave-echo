@@ -1,8 +1,13 @@
 import type { World } from "./ecs/world.ts";
 import type { GameMap } from "./map/game-map.ts";
 import type { Renderer } from "./renderer/renderer.ts";
+import { calculateLayout } from "./renderer/layout.ts";
 import { renderGameGrid } from "./renderer/panels/game-grid.ts";
 import { renderDebugPanel } from "./renderer/panels/debug-panel.ts";
+import { renderPlayerStats } from "./renderer/panels/player-stats.ts";
+import { renderTargetInfo } from "./renderer/panels/target-info.ts";
+import { renderMessageLog } from "./renderer/panels/message-log.ts";
+import { renderEquipment } from "./renderer/panels/equipment.ts";
 import { handlePlayerInput } from "./ecs/systems/input.ts";
 import {
   startPlayerTurn,
@@ -26,6 +31,9 @@ export class Game {
   state = GameState.Gameplay;
   private messages = new MessageLog();
   private visibleTiles = new Set<string>();
+  private debugVisible = false;
+  private turnCounter = 0;
+
   constructor(
     private world: World,
     private map: GameMap,
@@ -33,6 +41,8 @@ export class Game {
   ) {}
 
   async run(): Promise<void> {
+    this.turnCounter = 1;
+    this.messages.setTurn(this.turnCounter);
     startPlayerTurn(this.world);
     this.visibleTiles = computePlayerFOW(this.world, this.map);
 
@@ -43,6 +53,11 @@ export class Game {
       if (event.type === "quit") {
         this.state = GameState.Quitting;
         break;
+      }
+
+      if (event.type === "toggleDebug") {
+        this.debugVisible = !this.debugVisible;
+        continue;
       }
 
       if (event.type === "pass") {
@@ -66,6 +81,8 @@ export class Game {
           this.state = GameState.Dead;
           break;
         }
+        this.turnCounter++;
+        this.messages.setTurn(this.turnCounter);
         startPlayerTurn(this.world);
         this.visibleTiles = computePlayerFOW(this.world, this.map);
       }
@@ -73,9 +90,11 @@ export class Game {
 
     if (this.state === GameState.Dead) {
       this.render();
+      const size = this.renderer.getScreenSize();
+      const layout = calculateLayout(size.width, size.height);
       this.renderer.drawText(
-        0,
-        this.map.height + 5,
+        layout.messageLog.x + 2,
+        layout.messageLog.y + layout.messageLog.height - 2,
         "You died. Press any key to quit.",
         "red",
       );
@@ -111,53 +130,38 @@ export class Game {
   private render(): void {
     this.renderer.clear();
     const size = this.renderer.getScreenSize();
+    const layout = calculateLayout(size.width, size.height);
 
-    let gridW: number;
-    const gridH = Math.min(this.map.height + 2, size.height - 6);
-
-    gridW = Math.floor(size.width * 0.6);
-    const debugW = size.width - gridW;
+    const viewport = this.calculateViewport(
+      layout.gameGrid.width - 2,
+      layout.gameGrid.height - 2,
+    );
     renderGameGrid(
       this.renderer,
       this.world,
       this.map,
-      { x: 0, y: 0, width: gridW, height: gridH },
-      this.calculateViewport(gridW - 2, gridH - 2),
+      layout.gameGrid,
+      viewport,
       this.visibleTiles,
     );
-    renderDebugPanel(this.renderer, this.world, {
-      x: gridW,
-      y: 0,
-      width: debugW,
-      height: gridH,
-    });
 
-    const players = this.world.query("PlayerControlled", "TurnActor", "Stats");
-    let statusText = "arrows:move .:wait e:pickup s:swap u:use q:quit";
-    if (players.length > 0) {
-      const turnActor = this.world.getComponent(players[0]!, "TurnActor")!;
-      const stats = this.world.getComponent(players[0]!, "Stats")!;
-      const health = this.world.getComponent(players[0]!, "Health");
-      const hpText = health ? `HP: ${health.current}/${health.max} | ` : "";
-      const equipment = this.world.getComponent(players[0]!, "Equipment");
-      const weaponName =
-        equipment?.weapon !== null && equipment?.weapon !== undefined
-          ? (this.world.getComponent(equipment.weapon, "Item")?.name ?? "?")
-          : "fists";
-      statusText = `${hpText}Moves: ${turnActor.movementRemaining}/${stats.speed} | Wpn: ${weaponName} | arrows:move .:wait e:pickup s:swap u:use q:quit`;
-    }
-    this.renderer.drawText(0, gridH, statusText, "gray");
+    renderPlayerStats(this.renderer, this.world, layout.playerStats);
+    renderTargetInfo(this.renderer, this.world, layout.targetInfo, null);
+    renderEquipment(this.renderer, this.world, layout.equipment);
 
-    this.renderer.drawText(
-      0,
-      gridH + 1,
-      "@:you  g:goblin  /:sword  ):bow  !:potion  │─:wall  ·:floor",
-      "gray",
-    );
-
-    const messages = this.messages.getMessages();
-    for (let i = 0; i < messages.length; i++) {
-      this.renderer.drawText(0, gridH + 2 + i, messages[i]!, "yellow");
+    if (this.debugVisible) {
+      renderDebugPanel(
+        this.renderer,
+        this.world,
+        layout.messageLog,
+        this.messages.getMessagesWithTurns(),
+      );
+    } else {
+      renderMessageLog(
+        this.renderer,
+        layout.messageLog,
+        this.messages.getRecent(layout.messageLog.height - 2),
+      );
     }
 
     this.renderer.flush();

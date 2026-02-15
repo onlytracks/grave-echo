@@ -40,19 +40,20 @@ Read the relevant doc before implementing any feature in its domain.
 
 Use these terms consistently in docs, code comments, commit messages, and todos.
 
-| Term       | Meaning                                                                       |
-| ---------- | ----------------------------------------------------------------------------- |
+| Term       | Meaning                                                                           |
+| ---------- | --------------------------------------------------------------------------------- |
 | **glyph**  | The Unicode character used to visually represent a tile or entity (`@`, `·`, `┌`) |
 | **entity** | An ECS entity — any game object with components (player, enemies, items, portals) |
-| **tile**   | A map cell with terrain properties (floor, wall) — not an entity              |
-| **panel**  | A bounded UI region that renders specific information (PlayerStats, MessageLog) |
-| **sense**  | A perception channel (vision, hearing, smell) — see `docs/senses.md`          |
+| **tile**   | A map cell with terrain properties (floor, wall) — not an entity                  |
+| **panel**  | A bounded UI region that renders specific information (PlayerStats, MessageLog)   |
+| **sense**  | A perception channel (vision, hearing, smell) — see `docs/senses.md`              |
 
 Avoid "character" in docs and comments — it's ambiguous (Unicode glyph vs game entity).
 The code field `char` in `Renderable` and `Tile` interfaces is fine — it's idiomatic and
 short for glyph in context.
 
 ### Glyph Reference
+
 When choosing glyphs for entities, items, or terrain, consult this roguelike Unicode reference:
 https://raw.githubusercontent.com/globalcitizen/zomia/master/USEFUL-UNICODE.md
 

@@ -5,6 +5,7 @@ export type InputEvent =
   | { type: "pickup" }
   | { type: "swapWeapon" }
   | { type: "useItem" }
+  | { type: "toggleDebug" }
   | { type: "unknown" };
 
 export function parseInput(data: Buffer): InputEvent {
@@ -19,6 +20,36 @@ export function parseInput(data: Buffer): InputEvent {
       case 0x44:
         return { type: "move", direction: "left" };
     }
+  }
+
+  // F1: \x1bOP (xterm) or \x1b[11~ (most terminals)
+  if (
+    data.length === 3 &&
+    data[0] === 0x1b &&
+    data[1] === 0x4f &&
+    data[2] === 0x50
+  ) {
+    return { type: "toggleDebug" };
+  }
+  if (
+    data.length === 4 &&
+    data[0] === 0x1b &&
+    data[1] === 0x5b &&
+    data[2] === 0x31 &&
+    data[3] === 0x7e
+  ) {
+    return { type: "toggleDebug" };
+  }
+  // Also match \x1b[11~ as 5 bytes
+  if (
+    data.length === 5 &&
+    data[0] === 0x1b &&
+    data[1] === 0x5b &&
+    data[2] === 0x31 &&
+    data[3] === 0x31 &&
+    data[4] === 0x7e
+  ) {
+    return { type: "toggleDebug" };
   }
 
   if (data.length === 1) {
