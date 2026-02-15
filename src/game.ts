@@ -24,8 +24,6 @@ export enum GameState {
 export class Game {
   state = GameState.Gameplay;
   private messages = new MessageLog();
-  private debugVisible = false;
-
   constructor(
     private world: World,
     private map: GameMap,
@@ -42,11 +40,6 @@ export class Game {
       if (event.type === "quit") {
         this.state = GameState.Quitting;
         break;
-      }
-
-      if (event.type === "toggleDebug") {
-        this.debugVisible = !this.debugVisible;
-        continue;
       }
 
       if (event.type === "pass") {
@@ -117,35 +110,24 @@ export class Game {
     let gridW: number;
     const gridH = Math.min(this.map.height + 2, size.height - 6);
 
-    if (this.debugVisible) {
-      gridW = Math.floor(size.width * 0.6);
-      const debugW = size.width - gridW;
-      renderGameGrid(
-        this.renderer,
-        this.world,
-        this.map,
-        { x: 0, y: 0, width: gridW, height: gridH },
-        this.calculateViewport(gridW - 2, gridH - 2),
-      );
-      renderDebugPanel(this.renderer, this.world, {
-        x: gridW,
-        y: 0,
-        width: debugW,
-        height: gridH,
-      });
-    } else {
-      gridW = Math.min(this.map.width + 2, size.width);
-      renderGameGrid(
-        this.renderer,
-        this.world,
-        this.map,
-        { x: 0, y: 0, width: gridW, height: gridH },
-        this.calculateViewport(gridW - 2, gridH - 2),
-      );
-    }
+    gridW = Math.floor(size.width * 0.6);
+    const debugW = size.width - gridW;
+    renderGameGrid(
+      this.renderer,
+      this.world,
+      this.map,
+      { x: 0, y: 0, width: gridW, height: gridH },
+      this.calculateViewport(gridW - 2, gridH - 2),
+    );
+    renderDebugPanel(this.renderer, this.world, {
+      x: gridW,
+      y: 0,
+      width: debugW,
+      height: gridH,
+    });
 
     const players = this.world.query("PlayerControlled", "TurnActor", "Stats");
-    let statusText = "Arrows:move .:wait E:pickup S:swap U:use F1:debug Q:quit";
+    let statusText = "arrows:move .:wait e:pickup s:swap u:use q:quit";
     if (players.length > 0) {
       const turnActor = this.world.getComponent(players[0]!, "TurnActor")!;
       const stats = this.world.getComponent(players[0]!, "Stats")!;
@@ -156,7 +138,7 @@ export class Game {
         equipment?.weapon !== null && equipment?.weapon !== undefined
           ? (this.world.getComponent(equipment.weapon, "Item")?.name ?? "?")
           : "fists";
-      statusText = `${hpText}Moves: ${turnActor.movementRemaining}/${stats.speed} | Wpn: ${weaponName} | Arrows:move .:wait E:pickup S:swap U:use F1:debug Q:quit`;
+      statusText = `${hpText}Moves: ${turnActor.movementRemaining}/${stats.speed} | Wpn: ${weaponName} | arrows:move .:wait e:pickup s:swap u:use q:quit`;
     }
     this.renderer.drawText(0, gridH, statusText, "gray");
 

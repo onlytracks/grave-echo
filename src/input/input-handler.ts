@@ -2,20 +2,12 @@ export type InputEvent =
   | { type: "move"; direction: "up" | "down" | "left" | "right" }
   | { type: "pass" }
   | { type: "quit" }
-  | { type: "toggleDebug" }
   | { type: "pickup" }
   | { type: "swapWeapon" }
   | { type: "useItem" }
   | { type: "unknown" };
 
 export function parseInput(data: Buffer): InputEvent {
-  const str = data.toString();
-
-  // F1: \x1b[11~ or \x1bOP
-  if (str === "\x1b[11~" || str === "\x1bOP") {
-    return { type: "toggleDebug" };
-  }
-
   if (data.length === 3 && data[0] === 0x1b && data[1] === 0x5b) {
     switch (data[2]) {
       case 0x41:
