@@ -1,6 +1,13 @@
 import type { Color, Renderer } from "../renderer.ts";
-import type { World } from "../../ecs/world.ts";
+import type { World, Entity } from "../../ecs/world.ts";
 import type { GameMap } from "../../map/game-map.ts";
+
+function entityPriority(world: World, entity: Entity): number {
+  if (world.hasComponent(entity, "PlayerControlled")) return 3;
+  if (world.hasComponent(entity, "AIControlled")) return 2;
+  if (world.hasComponent(entity, "Item")) return 1;
+  return 0;
+}
 
 export interface Viewport {
   x: number;
@@ -44,7 +51,9 @@ export function renderGameGrid(
     }
   }
 
-  const entities = world.query("Position", "Renderable");
+  const entities = world
+    .query("Position", "Renderable")
+    .sort((a, b) => entityPriority(world, a) - entityPriority(world, b));
   for (const entity of entities) {
     const pos = world.getComponent(entity, "Position")!;
     const rend = world.getComponent(entity, "Renderable")!;

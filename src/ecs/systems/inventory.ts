@@ -21,6 +21,13 @@ export function pickup(
   inventory.items.push(itemEntity);
   inventory.totalWeight += item.weight;
   messages.add(`You pick up ${item.name}`);
+
+  const equipment = world.getComponent(entity, "Equipment");
+  const weapon = world.getComponent(itemEntity, "Weapon");
+  if (equipment && weapon && equipment.weapon === null) {
+    equip(world, entity, itemEntity, messages);
+  }
+
   return true;
 }
 

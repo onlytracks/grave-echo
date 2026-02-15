@@ -151,7 +151,7 @@ export class Game {
     this.renderer.drawText(
       0,
       gridH + 1,
-      "@:you  g:goblin  /:sword  ):bow  !:potion  #:wall  .:floor",
+      "@:you  g:goblin  /:sword  ):bow  !:potion  │─:wall  ·:floor",
       "gray",
     );
 

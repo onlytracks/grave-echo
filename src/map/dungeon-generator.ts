@@ -1,4 +1,5 @@
 import { GameMap, FLOOR_TILE, WALL_TILE } from "./game-map.ts";
+import { assignWallCharacters } from "./tile-utils.ts";
 
 export interface Room {
   x: number;
@@ -100,5 +101,6 @@ export function generateDungeon(
     carveCorridor(map, a.x, a.y, b.x, b.y, rng() < 0.5);
   }
 
+  assignWallCharacters(map);
   return { map, rooms };
 }

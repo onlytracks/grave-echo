@@ -1,4 +1,5 @@
 import { FLOOR_TILE, GameMap, WALL_TILE } from "./game-map.ts";
+import { assignWallCharacters } from "./tile-utils.ts";
 
 export function buildTestRoom(): GameMap {
   const map = new GameMap(20, 15, FLOOR_TILE);
@@ -22,5 +23,6 @@ export function buildTestRoom(): GameMap {
   map.setTile(14, 7, { ...WALL_TILE });
   map.setTile(14, 11, { ...WALL_TILE });
 
+  assignWallCharacters(map);
   return map;
 }

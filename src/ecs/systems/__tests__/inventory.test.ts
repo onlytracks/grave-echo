@@ -211,21 +211,63 @@ describe("Inventory System", () => {
     expect(world.getComponent(player, "Inventory")!.totalWeight).toBe(4);
   });
 
-  test("swapToNextWeapon cycles through weapons", () => {
+  test("pickup auto-equips weapon when no weapon equipped", () => {
+    const { world, messages, player } = setupWorld();
+    const sword = createSword(world, 5, 5);
+    pickup(world, player, sword, messages);
+
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.weapon).toBe(sword);
+  });
+
+  test("pickup does not auto-equip when weapon already equipped", () => {
     const { world, messages, player } = setupWorld();
     const sword = createSword(world, 5, 5);
     const bow = createBow(world, 5, 5);
     pickup(world, player, sword, messages);
     pickup(world, player, bow, messages);
 
-    swapToNextWeapon(world, player, messages);
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.weapon).toBe(sword);
+  });
+
+  test("pickup does not auto-equip non-weapon items", () => {
+    const { world, messages, player } = setupWorld();
+    const potion = createPotion(world, 5, 5);
+    pickup(world, player, potion, messages);
+
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.weapon).toBeNull();
+  });
+
+  test("auto-equip messages appear in correct order", () => {
+    const { world, messages, player } = setupWorld();
+    const sword = createSword(world, 5, 5);
+    pickup(world, player, sword, messages);
+
+    expect(messages.getMessages()).toEqual([
+      "You pick up Iron Sword",
+      "You equip Iron Sword",
+    ]);
+  });
+
+  test("swapToNextWeapon cycles through weapons", () => {
+    const { world, messages, player } = setupWorld();
+    const sword = createSword(world, 5, 5);
+    const bow = createBow(world, 5, 5);
+    pickup(world, player, sword, messages);
+    // sword is auto-equipped since no weapon was equipped
     expect(world.getComponent(player, "Equipment")!.weapon).toBe(sword);
+    pickup(world, player, bow, messages);
 
     swapToNextWeapon(world, player, messages);
     expect(world.getComponent(player, "Equipment")!.weapon).toBe(bow);
 
     swapToNextWeapon(world, player, messages);
     expect(world.getComponent(player, "Equipment")!.weapon).toBe(sword);
+
+    swapToNextWeapon(world, player, messages);
+    expect(world.getComponent(player, "Equipment")!.weapon).toBe(bow);
   });
 });
 
