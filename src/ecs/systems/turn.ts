@@ -26,7 +26,7 @@ export function startPlayerTurn(world: World, messages?: MessageLog): void {
     const speed = getEffectiveSpeed(world, player);
     const penalty = getEncumbrancePenalty(world, player);
     turnActor.hasActed = false;
-    turnActor.movementRemaining = Math.max(0, speed - penalty);
+    turnActor.movementRemaining = Math.max(1, speed - penalty);
     turnActor.secondaryUsed = false;
     if (messages) {
       messages.add(
@@ -65,7 +65,7 @@ export function resetIdleTurn(world: World, messages?: MessageLog): void {
     const speed = getEffectiveSpeed(world, player);
     const penalty = getEncumbrancePenalty(world, player);
     turnActor.hasActed = false;
-    turnActor.movementRemaining = Math.max(0, speed - penalty);
+    turnActor.movementRemaining = Math.max(1, speed - penalty);
     turnActor.secondaryUsed = false;
     if (messages) {
       messages.add(`[turn] Player turn reset (idle)`, "debug");

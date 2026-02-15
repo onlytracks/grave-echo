@@ -7,6 +7,7 @@ import {
   endPlayerTurn,
   isPlayerTurnOver,
   resetIdleTurn,
+  getEncumbrancePenalty,
 } from "../turn.ts";
 
 function setupPlayerWorld() {
@@ -127,6 +128,30 @@ describe("resetIdleTurn", () => {
     resetIdleTurn(world);
     const turnActor = world.getComponent(player, "TurnActor")!;
     expect(turnActor.movementRemaining).toBe(1);
+  });
+
+  test("encumbered player always gets at least 1 move", () => {
+    const { world, player } = setupIdleWorld("alert");
+    world.addComponent(player, "Inventory", {
+      items: [],
+      totalWeight: 28,
+      carryCapacity: 30,
+    });
+    const armor = world.createEntity();
+    world.addComponent(armor, "Armor", {
+      defense: 6,
+      speedPenalty: 2,
+      armorType: "heavy",
+    });
+    world.addComponent(player, "Equipment", {
+      weapon: null,
+      armor,
+      accessory1: null,
+      accessory2: null,
+    });
+    // speed 3 - 2 (armor) - 1 (encumbrance at 93%) = 0, but floor at 1
+    startPlayerTurn(world);
+    expect(world.getComponent(player, "TurnActor")!.movementRemaining).toBe(1);
   });
 
   test("idle turn never auto-completes from exhausted actions", () => {
