@@ -8,6 +8,9 @@ export function tryMove(
   targetX: number,
   targetY: number,
 ): boolean {
+  const turnActor = world.getComponent(entity, "TurnActor");
+  if (turnActor && turnActor.movementRemaining <= 0) return false;
+
   if (!map.isWalkable(targetX, targetY)) return false;
 
   const blockers = world.query("Position", "Collidable");
@@ -24,6 +27,7 @@ export function tryMove(
   if (position) {
     position.x = targetX;
     position.y = targetY;
+    if (turnActor) turnActor.movementRemaining--;
   }
   return true;
 }

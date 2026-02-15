@@ -18,6 +18,12 @@ function main(): void {
   });
   world.addComponent(player, "PlayerControlled", {});
   world.addComponent(player, "Collidable", { blocksMovement: true });
+  world.addComponent(player, "Health", { current: 20, max: 20 });
+  world.addComponent(player, "Stats", { strength: 5, defense: 2, speed: 3 });
+  world.addComponent(player, "TurnActor", {
+    hasActed: false,
+    movementRemaining: 3,
+  });
 
   enableRawMode();
   renderer.init();

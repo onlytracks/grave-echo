@@ -1,5 +1,6 @@
 export type InputEvent =
   | { type: "move"; direction: "up" | "down" | "left" | "right" }
+  | { type: "pass" }
   | { type: "quit" }
   | { type: "unknown" };
 
@@ -20,6 +21,9 @@ export function parseInput(data: Buffer): InputEvent {
   if (data.length === 1) {
     if (data[0] === 0x1b || data[0] === 0x71) {
       return { type: "quit" };
+    }
+    if (data[0] === 0x2e) {
+      return { type: "pass" };
     }
   }
 
