@@ -16,6 +16,7 @@ Read the relevant doc before implementing any feature in its domain.
 | `docs/combat.md`    | Turn system, actions, weapons, enemies, targeting   |
 | `docs/items.md`     | Equipment, rarity, loot, weight, consumables        |
 | `docs/world.md`     | Regions, pacing, dungeons, The Verdant Threshold    |
+| `docs/senses.md`    | Vision, hearing, smell, awareness, fog of war       |
 | `docs/technical.md` | Stack, ECS, renderer, data layer, project structure |
 
 ## Tech Stack
@@ -34,6 +35,29 @@ Read the relevant doc before implementing any feature in its domain.
 3. **No run state persistence** — only Sanctuary hub state persists to SQLite. See `docs/core-loop.md`.
 4. **Renderer abstraction** — no direct ANSI outside the renderer implementation. See `docs/technical.md`.
 5. **Repository pattern** — no SQL outside `src/data/`. See `docs/technical.md`.
+
+## Terminology
+
+Use these terms consistently in docs, code comments, commit messages, and todos.
+
+| Term       | Meaning                                                                       |
+| ---------- | ----------------------------------------------------------------------------- |
+| **glyph**  | The Unicode character used to visually represent a tile or entity (`@`, `·`, `┌`) |
+| **entity** | An ECS entity — any game object with components (player, enemies, items, portals) |
+| **tile**   | A map cell with terrain properties (floor, wall) — not an entity              |
+| **panel**  | A bounded UI region that renders specific information (PlayerStats, MessageLog) |
+| **sense**  | A perception channel (vision, hearing, smell) — see `docs/senses.md`          |
+
+Avoid "character" in docs and comments — it's ambiguous (Unicode glyph vs game entity).
+The code field `char` in `Renderable` and `Tile` interfaces is fine — it's idiomatic and
+short for glyph in context.
+
+### Glyph Reference
+When choosing glyphs for entities, items, or terrain, consult this roguelike Unicode reference:
+https://raw.githubusercontent.com/globalcitizen/zomia/master/USEFUL-UNICODE.md
+
+Prefer glyphs that are single-width and render well in common monospace terminal fonts.
+Test in the game before committing — some glyphs look different across fonts.
 
 ## Code Conventions
 

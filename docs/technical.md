@@ -50,7 +50,7 @@
 | Component        | Data                                                | Entities          |
 | ---------------- | --------------------------------------------------- | ----------------- |
 | Position         | x, y, region                                        | All spatial       |
-| Renderable       | character, foreground color, background color       | All visible       |
+| Renderable       | glyph, foreground color, background color           | All visible       |
 | Health           | current, max                                        | All living        |
 | Stats            | strength, defense, speed                            | All living        |
 | Equipment        | weapon, armor, accessory1, accessory2 (entity refs) | All living        |
