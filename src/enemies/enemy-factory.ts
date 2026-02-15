@@ -141,7 +141,7 @@ export function createThornbackGuardian(
     world,
     { x, y, player, difficulty, intensity },
     {
-      char: "T",
+      char: "\u{040B}",
       fg: "brightGreen",
       hp: 15,
       str: 4,
@@ -174,7 +174,7 @@ export function createBlightvinesSkulker(
     world,
     { x, y, player, difficulty, intensity },
     {
-      char: "s",
+      char: "\u{03DB}",
       fg: "green",
       hp: 7,
       str: 4,
@@ -205,7 +205,7 @@ export function createHollowPatrol(
     world,
     { x, y, player, difficulty, intensity },
     {
-      char: "p",
+      char: "\u{020E}",
       fg: "gray",
       hp: 10,
       str: 3,

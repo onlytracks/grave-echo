@@ -129,7 +129,7 @@ function createGoblin(
   const goblin = world.createEntity();
   world.addComponent(goblin, "Position", { x, y });
   world.addComponent(goblin, "Renderable", {
-    char: "g",
+    char: "\u{0121}",
     fg: "red",
     bg: "black",
   });
@@ -196,7 +196,7 @@ function createBoss(
   const boss = world.createEntity();
   world.addComponent(boss, "Position", { x, y });
   world.addComponent(boss, "Renderable", {
-    char: "G",
+    char: "\u{0120}",
     fg: "brightRed",
     bg: "black",
   });

@@ -5,7 +5,11 @@ import type { World } from "../ecs/world.ts";
 export function createIronSword(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "/", fg: "white", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F04E5}",
+    fg: "brightCyan",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Iron Sword",
     weight: 6,
@@ -28,7 +32,11 @@ export function createSwordAndShield(
 ): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "+", fg: "white", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F18BE}",
+    fg: "brightCyan",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Sword & Shield",
     weight: 7,
@@ -47,7 +55,11 @@ export function createSwordAndShield(
 export function createBattleAxe(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "/", fg: "white", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F1842}",
+    fg: "white",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Battle Axe",
     weight: 8,
@@ -70,7 +82,11 @@ export function createMaceAndShield(
 ): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "+", fg: "white", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F1843}",
+    fg: "white",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Mace & Shield",
     weight: 6,
@@ -89,7 +105,11 @@ export function createMaceAndShield(
 export function createIronSpear(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "|", fg: "white", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F1845}",
+    fg: "white",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Iron Spear",
     weight: 5,
@@ -108,7 +128,11 @@ export function createIronSpear(world: World, x: number, y: number): number {
 export function createHalberd(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "|", fg: "white", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F08C8}",
+    fg: "white",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Halberd",
     weight: 9,
@@ -127,7 +151,11 @@ export function createHalberd(world: World, x: number, y: number): number {
 export function createShortBow(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: ")", fg: "yellow", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F1841}",
+    fg: "brightYellow",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Short Bow",
     weight: 4,
@@ -146,7 +174,11 @@ export function createShortBow(world: World, x: number, y: number): number {
 export function createCrossbow(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "}", fg: "yellow", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F1841}",
+    fg: "brightYellow",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Crossbow",
     weight: 6,
@@ -165,7 +197,11 @@ export function createCrossbow(world: World, x: number, y: number): number {
 export function createOakStaff(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "/", fg: "cyan", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F1844}",
+    fg: "cyan",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Oak Staff",
     weight: 3,
@@ -185,7 +221,7 @@ export function createWand(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
   world.addComponent(e, "Renderable", {
-    char: "-",
+    char: "\u{F0AD0}",
     fg: "magenta",
     bg: "black",
   });
@@ -205,7 +241,11 @@ export function createWand(world: World, x: number, y: number): number {
 export function createLeatherArmor(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "[", fg: "green", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{F0893}",
+    fg: "green",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Leather Armor",
     weight: 5,
@@ -223,7 +263,7 @@ export function createChainmail(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
   world.addComponent(e, "Renderable", {
-    char: "[",
+    char: "\u{F0893}",
     fg: "brightGreen",
     bg: "black",
   });
@@ -244,7 +284,7 @@ export function createPlateArmor(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
   world.addComponent(e, "Renderable", {
-    char: "[",
+    char: "\u{F0893}",
     fg: "brightWhite",
     bg: "black",
   });
@@ -266,7 +306,11 @@ export function createPlateArmor(world: World, x: number, y: number): number {
 export function createIronRing(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "°", fg: "yellow", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{1AAD}",
+    fg: "yellow",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Iron Ring",
     weight: 1,
@@ -282,7 +326,11 @@ export function createIronRing(world: World, x: number, y: number): number {
 export function createWardAmulet(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: '"', fg: "cyan", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{0920}",
+    fg: "cyan",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Ward Amulet",
     weight: 1,
@@ -298,7 +346,11 @@ export function createWardAmulet(world: World, x: number, y: number): number {
 export function createSwiftBoots(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
-  world.addComponent(e, "Renderable", { char: "{", fg: "yellow", bg: "black" });
+  world.addComponent(e, "Renderable", {
+    char: "\u{16C3}",
+    fg: "yellow",
+    bg: "black",
+  });
   world.addComponent(e, "Item", {
     name: "Swift Boots",
     weight: 2,
@@ -321,8 +373,8 @@ export function createHealingPotion(
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
   world.addComponent(e, "Renderable", {
-    char: "!",
-    fg: "brightRed",
+    char: "\u{13A3}",
+    fg: "brightGreen",
     bg: "black",
   });
   world.addComponent(e, "Item", {
@@ -344,7 +396,7 @@ export function createSpeedPotion(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
   world.addComponent(e, "Renderable", {
-    char: "!",
+    char: "\u{13A3}",
     fg: "brightCyan",
     bg: "black",
   });
@@ -371,7 +423,7 @@ export function createStrengthPotion(
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
   world.addComponent(e, "Renderable", {
-    char: "!",
+    char: "\u{13A3}",
     fg: "brightYellow",
     bg: "black",
   });
@@ -398,7 +450,7 @@ export function createDefensePotion(
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
   world.addComponent(e, "Renderable", {
-    char: "!",
+    char: "\u{13A3}",
     fg: "brightBlue",
     bg: "black",
   });
