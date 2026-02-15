@@ -3,6 +3,7 @@ import type { GameMap } from "../../map/game-map.ts";
 import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
 import { updateAwareness } from "./sensory.ts";
+import { entityName } from "./entity-name.ts";
 
 function chargerBehavior(
   world: World,
@@ -14,24 +15,31 @@ function chargerBehavior(
   const pos = world.getComponent(entity, "Position")!;
   const turnActor = world.getComponent(entity, "TurnActor")!;
   const awareness = world.getComponent(entity, "Awareness");
+  const name = entityName(world, entity);
 
   let goalX: number;
   let goalY: number;
+  let goalSource: string;
 
   if (ai.targetEntity !== null) {
     const targetPos = world.getComponent(ai.targetEntity, "Position");
     if (targetPos) {
       goalX = targetPos.x;
       goalY = targetPos.y;
+      goalSource = "target";
     } else {
       return;
     }
   } else if (awareness?.lastKnownTarget) {
     goalX = awareness.lastKnownTarget.x;
     goalY = awareness.lastKnownTarget.y;
+    goalSource = "last known";
   } else {
     return;
   }
+
+  const startX = pos.x;
+  const startY = pos.y;
 
   while (turnActor.movementRemaining > 0 && !turnActor.hasActed) {
     const dx = goalX - pos.x;
@@ -55,8 +63,24 @@ function chargerBehavior(
       }
     }
 
-    if (result === "blocked") break;
-    if (result === "attacked") break;
+    if (result === "blocked") {
+      messages.add(`[ai] ${name}: blocked at (${pos.x},${pos.y})`, "debug");
+      break;
+    }
+    if (result === "attacked") {
+      messages.add(
+        `[ai] ${name}: bumped hostile at (${goalX},${goalY})`,
+        "debug",
+      );
+      break;
+    }
+  }
+
+  if (pos.x !== startX || pos.y !== startY) {
+    messages.add(
+      `[ai] ${name}: moved (${startX},${startY})→(${pos.x},${pos.y}) toward ${goalSource} (${goalX},${goalY})`,
+      "debug",
+    );
   }
 }
 
@@ -72,10 +96,16 @@ export function processAI(
     "Stats",
   );
   for (const entity of aiEntities) {
-    updateAwareness(world, map, entity);
+    updateAwareness(world, map, entity, messages);
 
     const awareness = world.getComponent(entity, "Awareness");
-    if (awareness && awareness.state === "idle") continue;
+    if (awareness && awareness.state === "idle") {
+      messages.add(
+        `[ai] ${entityName(world, entity)}: idle, skipping`,
+        "debug",
+      );
+      continue;
+    }
 
     const ai = world.getComponent(entity, "AIControlled")!;
     switch (ai.pattern) {

@@ -2,6 +2,7 @@ import type { World, Entity } from "../world.ts";
 import type { GameMap } from "../../map/game-map.ts";
 import type { MessageLog } from "./messages.ts";
 import { isHostile, attack } from "./combat.ts";
+import { entityName } from "./entity-name.ts";
 
 export type MoveResult = "moved" | "blocked" | "attacked";
 
@@ -16,7 +17,17 @@ export function tryMove(
   const turnActor = world.getComponent(entity, "TurnActor");
   if (turnActor && turnActor.movementRemaining <= 0) return "blocked";
 
-  if (!map.isWalkable(targetX, targetY)) return "blocked";
+  const name = entityName(world, entity);
+
+  if (!map.isWalkable(targetX, targetY)) {
+    if (messages) {
+      messages.add(
+        `[move] ${name} blocked by wall at (${targetX},${targetY})`,
+        "debug",
+      );
+    }
+    return "blocked";
+  }
 
   const blockers = world.query("Position", "Collidable");
   for (const other of blockers) {
@@ -28,15 +39,31 @@ export function tryMove(
         attack(world, entity, other, messages);
         return "attacked";
       }
+      if (messages) {
+        const blockerName = entityName(world, other);
+        messages.add(
+          `[move] ${name} blocked by ${blockerName} at (${targetX},${targetY})`,
+          "debug",
+        );
+      }
       return "blocked";
     }
   }
 
   const position = world.getComponent(entity, "Position");
   if (position) {
+    const fromX = position.x;
+    const fromY = position.y;
     position.x = targetX;
     position.y = targetY;
     if (turnActor) turnActor.movementRemaining--;
+    if (messages) {
+      const remaining = turnActor ? turnActor.movementRemaining : "?";
+      messages.add(
+        `[move] ${name} (${fromX},${fromY})→(${targetX},${targetY}), ${remaining} moves left`,
+        "debug",
+      );
+    }
   }
   return "moved";
 }

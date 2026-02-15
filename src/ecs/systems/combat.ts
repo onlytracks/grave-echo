@@ -1,5 +1,6 @@
 import type { World, Entity } from "../world.ts";
 import type { MessageLog } from "./messages.ts";
+import { entityName } from "./entity-name.ts";
 
 export function isHostile(world: World, a: Entity, b: Entity): boolean {
   const factionA = world.getComponent(a, "Faction");
@@ -36,13 +37,21 @@ export function attack(
   const isCrit = rng() < 0.05;
   if (isCrit) damage *= 2;
 
+  const hpBefore = defenderHealth.current;
   defenderHealth.current -= damage;
 
-  const attackerName = getEntityName(world, attacker);
-  const defenderName = getEntityName(world, defender);
+  const attackerDisplay = getDisplayName(world, attacker);
+  const defenderDisplay = getDisplayName(world, defender);
   const critText = isCrit ? " (CRITICAL!)" : "";
   messages.add(
-    `${attackerName} attacks ${defenderName} for ${damage} damage${critText}`,
+    `${attackerDisplay} attacks ${defenderDisplay} for ${damage} damage${critText}`,
+  );
+
+  const atkName = entityName(world, attacker);
+  const defName = entityName(world, defender);
+  messages.add(
+    `[combat] ${atkName}(str=${baseDamage}) → ${defName}(def=${defenderStats.defense}), dmg=${damage}${isCrit ? " crit" : ""}, hp: ${hpBefore}→${defenderHealth.current}`,
+    "debug",
   );
 
   const turnActor = world.getComponent(attacker, "TurnActor");
@@ -52,7 +61,7 @@ export function attack(
   }
 }
 
-function getEntityName(world: World, entity: Entity): string {
+function getDisplayName(world: World, entity: Entity): string {
   if (world.hasComponent(entity, "PlayerControlled")) return "You";
   const renderable = world.getComponent(entity, "Renderable");
   if (renderable) return `The ${renderable.char}`;

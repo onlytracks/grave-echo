@@ -1,4 +1,6 @@
 import type { World, Entity } from "../world.ts";
+import type { MessageLog } from "./messages.ts";
+import { entityName } from "./entity-name.ts";
 
 export function getEncumbrancePenalty(world: World, entity: Entity): number {
   const inventory = world.getComponent(entity, "Inventory");
@@ -10,7 +12,7 @@ export function getEncumbrancePenalty(world: World, entity: Entity): number {
   return 0;
 }
 
-export function startPlayerTurn(world: World): void {
+export function startPlayerTurn(world: World, messages?: MessageLog): void {
   const players = world.query("PlayerControlled", "TurnActor", "Stats");
   for (const player of players) {
     const turnActor = world.getComponent(player, "TurnActor")!;
@@ -19,15 +21,24 @@ export function startPlayerTurn(world: World): void {
     turnActor.hasActed = false;
     turnActor.movementRemaining = Math.max(0, stats.speed - penalty);
     turnActor.secondaryUsed = false;
+    if (messages) {
+      messages.add(
+        `[turn] Player turn start: ${turnActor.movementRemaining} moves`,
+        "debug",
+      );
+    }
   }
 }
 
-export function endPlayerTurn(world: World): void {
+export function endPlayerTurn(world: World, messages?: MessageLog): void {
   const players = world.query("PlayerControlled", "TurnActor");
   for (const player of players) {
     const turnActor = world.getComponent(player, "TurnActor")!;
     turnActor.hasActed = true;
     turnActor.movementRemaining = 0;
+    if (messages) {
+      messages.add(`[turn] Player turn end`, "debug");
+    }
   }
 }
 
@@ -38,7 +49,7 @@ export function isPlayerTurnOver(world: World): boolean {
   return turnActor.hasActed;
 }
 
-export function resetIdleTurn(world: World): void {
+export function resetIdleTurn(world: World, messages?: MessageLog): void {
   const players = world.query("PlayerControlled", "TurnActor", "Awareness");
   for (const player of players) {
     const awareness = world.getComponent(player, "Awareness")!;
@@ -49,6 +60,9 @@ export function resetIdleTurn(world: World): void {
     turnActor.hasActed = false;
     turnActor.movementRemaining = Math.max(0, (stats?.speed ?? 1) - penalty);
     turnActor.secondaryUsed = false;
+    if (messages) {
+      messages.add(`[turn] Player turn reset (idle)`, "debug");
+    }
   }
 }
 
@@ -56,11 +70,18 @@ export function getAIEntities(world: World): Entity[] {
   return world.query("AIControlled", "TurnActor");
 }
 
-export function resetAITurns(world: World): void {
+export function resetAITurns(world: World, messages?: MessageLog): void {
   for (const entity of getAIEntities(world)) {
     const turnActor = world.getComponent(entity, "TurnActor")!;
     const stats = world.getComponent(entity, "Stats");
     turnActor.hasActed = false;
     turnActor.movementRemaining = stats?.speed ?? 1;
+    if (messages) {
+      const name = entityName(world, entity);
+      messages.add(
+        `[turn] ${name} turn start: ${turnActor.movementRemaining} moves`,
+        "debug",
+      );
+    }
   }
 }

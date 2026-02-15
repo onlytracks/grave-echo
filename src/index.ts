@@ -8,11 +8,18 @@ import {
   createShortBow,
   createHealingPotion,
 } from "./items/item-factory.ts";
+import { MessageLog } from "./ecs/systems/messages.ts";
 
 function main(): void {
   const world = new World();
   const { map, rooms } = generateDungeon();
   const renderer = new AnsiRenderer();
+  const messages = new MessageLog();
+
+  messages.add(
+    `[spawn] Dungeon generated: ${rooms.length} rooms, ${map.width}x${map.height}`,
+    "debug",
+  );
 
   const spawn = roomCenter(rooms[0]!);
 
@@ -46,6 +53,7 @@ function main(): void {
     alertDuration: 0,
     turnsWithoutTarget: 0,
   });
+  messages.add(`[spawn] Player at (${spawn.x},${spawn.y})`, "debug");
 
   const itemFactories = [createIronSword, createShortBow, createHealingPotion];
   for (let i = 0; i < itemFactories.length && i < rooms.length; i++) {
@@ -55,7 +63,18 @@ function main(): void {
       room.floors.find((f) => f.x === c.x + 1 && f.y === c.y) ??
       room.floors.find((f) => f.x !== c.x || f.y !== c.y) ??
       room.floors[0]!;
-    itemFactories[i]!(world, floor.x, floor.y);
+    const entity = itemFactories[i]!(world, floor.x, floor.y);
+    const item = world.getComponent(entity, "Item")!;
+    const weapon = world.getComponent(entity, "Weapon");
+    const consumable = world.getComponent(entity, "Consumable");
+    let detail = `${item.weight} wt`;
+    if (weapon) detail = `${weapon.damage} dmg, ${detail}`;
+    if (consumable)
+      detail = `${consumable.charges}/${consumable.maxCharges} charges`;
+    messages.add(
+      `[spawn] ${item.name} at (${floor.x},${floor.y}) [${detail}]`,
+      "debug",
+    );
   }
 
   for (let i = 1; i < rooms.length; i++) {
@@ -88,6 +107,10 @@ function main(): void {
       alertDuration: 5,
       turnsWithoutTarget: 0,
     });
+    messages.add(
+      `[spawn] g#${goblin} at (${c.x},${c.y}) [charger, 8hp]`,
+      "debug",
+    );
   }
 
   enableRawMode();
@@ -103,7 +126,7 @@ function main(): void {
     process.exit(0);
   });
 
-  const game = new Game(world, map, renderer);
+  const game = new Game(world, map, renderer, messages);
   game
     .run()
     .then(shutdown)

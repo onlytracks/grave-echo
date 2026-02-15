@@ -3,6 +3,18 @@ import type { World } from "../../ecs/world.ts";
 import type { Region } from "../layout.ts";
 import type { TaggedMessage } from "../../ecs/systems/messages.ts";
 
+function debugMessageColor(msg: TaggedMessage): Color {
+  if (msg.category === "gameplay") return "white";
+  const text = msg.text;
+  if (text.startsWith("[combat]")) return "red";
+  if (text.startsWith("[sense]")) return "yellow";
+  if (text.startsWith("[ai]")) return "cyan";
+  if (text.startsWith("[turn]")) return "magenta";
+  if (text.startsWith("[move]")) return "darkGray";
+  if (text.startsWith("[spawn]")) return "green";
+  return "gray";
+}
+
 export function renderDebugPanel(
   renderer: Renderer,
   world: World,
@@ -22,7 +34,6 @@ export function renderDebugPanel(
     row++;
   }
 
-  // World state (compact, single line)
   const allEntities = world.query();
   const players = world.query("PlayerControlled");
   let worldLine = `Entities: ${allEntities.length}`;
@@ -34,7 +45,6 @@ export function renderDebugPanel(
   }
   line(worldLine, "white");
 
-  // AI state (compact)
   const aiEntities = world.query("AIControlled", "Position");
   if (aiEntities.length > 0) {
     const aiParts: string[] = [];
@@ -61,7 +71,6 @@ export function renderDebugPanel(
     line(`AI: ${aiParts.join(" | ")}`, "cyan");
   }
 
-  // Messages with turn separators
   if (messages && messages.length > 0) {
     const availableRows = maxRow - row;
     const startIdx = Math.max(0, messages.length - availableRows);
@@ -73,7 +82,7 @@ export function renderDebugPanel(
         line(`--- Turn ${msg.turn} ---`, "yellow");
         lastTurn = msg.turn;
       }
-      line(msg.text);
+      line(msg.text, debugMessageColor(msg));
     }
   }
 }

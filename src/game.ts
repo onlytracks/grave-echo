@@ -30,7 +30,7 @@ export enum GameState {
 
 export class Game {
   state = GameState.Gameplay;
-  private messages = new MessageLog();
+  private messages: MessageLog;
   private visibleTiles = new Set<string>();
   private debugVisible = false;
   private turnCounter = 0;
@@ -39,13 +39,17 @@ export class Game {
     private world: World,
     private map: GameMap,
     private renderer: Renderer,
-  ) {}
+    messages?: MessageLog,
+  ) {
+    this.messages = messages ?? new MessageLog();
+  }
 
   async run(): Promise<void> {
     this.turnCounter = 1;
     this.messages.setTurn(this.turnCounter);
-    startPlayerTurn(this.world);
-    this.visibleTiles = computePlayerFOW(this.world, this.map);
+    this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");
+    startPlayerTurn(this.world, this.messages);
+    this.visibleTiles = computePlayerFOW(this.world, this.map, this.messages);
 
     while (this.state === GameState.Gameplay) {
       this.render();
@@ -62,11 +66,15 @@ export class Game {
       }
 
       if (event.type === "pass") {
-        endPlayerTurn(this.world);
+        endPlayerTurn(this.world, this.messages);
       } else {
         handlePlayerInput(this.world, this.map, event, this.messages);
-        this.visibleTiles = computePlayerFOW(this.world, this.map);
-        resetIdleTurn(this.world);
+        this.visibleTiles = computePlayerFOW(
+          this.world,
+          this.map,
+          this.messages,
+        );
+        resetIdleTurn(this.world, this.messages);
       }
 
       const healthResult = processHealth(this.world, this.messages);
@@ -76,7 +84,7 @@ export class Game {
       }
 
       if (isPlayerTurnOver(this.world)) {
-        resetAITurns(this.world);
+        resetAITurns(this.world, this.messages);
         processAI(this.world, this.map, this.messages);
         const aiHealthResult = processHealth(this.world, this.messages);
         if (aiHealthResult.playerDied) {
@@ -85,8 +93,13 @@ export class Game {
         }
         this.turnCounter++;
         this.messages.setTurn(this.turnCounter);
-        startPlayerTurn(this.world);
-        this.visibleTiles = computePlayerFOW(this.world, this.map);
+        this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");
+        startPlayerTurn(this.world, this.messages);
+        this.visibleTiles = computePlayerFOW(
+          this.world,
+          this.map,
+          this.messages,
+        );
       }
     }
 
@@ -156,7 +169,7 @@ export class Game {
         this.renderer,
         this.world,
         layout.messageLog,
-        this.messages.getMessagesWithTurns(),
+        this.messages.getAllMessagesWithTurns(),
       );
     } else {
       renderMessageLog(

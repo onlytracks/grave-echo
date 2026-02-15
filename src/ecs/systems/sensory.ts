@@ -1,5 +1,7 @@
 import type { World, Entity } from "../world.ts";
 import type { GameMap } from "../../map/game-map.ts";
+import type { MessageLog } from "./messages.ts";
+import { entityName } from "./entity-name.ts";
 
 export function hasLineOfSight(
   map: GameMap,
@@ -65,12 +67,15 @@ export function updateAwareness(
   world: World,
   map: GameMap,
   entity: Entity,
+  messages?: MessageLog,
 ): void {
   const senses = world.getComponent(entity, "Senses");
   const awareness = world.getComponent(entity, "Awareness");
   const pos = world.getComponent(entity, "Position");
   const faction = world.getComponent(entity, "Faction");
   if (!senses || !awareness || !pos || !faction) return;
+
+  const prevState = awareness.state;
 
   const visible = computeVisibleTiles(map, pos.x, pos.y, senses.vision.range);
 
@@ -107,21 +112,45 @@ export function updateAwareness(
       if (ai) ai.targetEntity = null;
     }
   }
+
+  if (messages && awareness.state !== prevState) {
+    const name = entityName(world, entity);
+    if (
+      awareness.state === "alert" &&
+      foundHostile !== null &&
+      hostilePos !== null
+    ) {
+      const dist =
+        Math.abs(pos.x - hostilePos.x) + Math.abs(pos.y - hostilePos.y);
+      messages.add(
+        `[sense] ${name}: idle → alert (spotted hostile at d=${dist})`,
+        "debug",
+      );
+    } else if (awareness.state === "idle") {
+      messages.add(
+        `[sense] ${name}: alert → idle (lost target, ${awareness.turnsWithoutTarget} turns)`,
+        "debug",
+      );
+    }
+  }
 }
 
 export function updatePlayerAwareness(
   world: World,
   map: GameMap,
   visible: Set<string>,
+  messages?: MessageLog,
 ): void {
   const players = world.query("PlayerControlled", "Awareness");
   if (players.length === 0) return;
 
   const player = players[0]!;
   const awareness = world.getComponent(player, "Awareness")!;
+  const prevState = awareness.state;
 
   const entities = world.query("Position", "Faction", "Awareness");
   let anyAlert = false;
+  let alertEntity: Entity | null = null;
 
   for (const entity of entities) {
     if (entity === player) continue;
@@ -133,14 +162,34 @@ export function updatePlayerAwareness(
     const entityPos = world.getComponent(entity, "Position")!;
     if (visible.has(`${entityPos.x},${entityPos.y}`)) {
       anyAlert = true;
+      alertEntity = entity;
       break;
     }
   }
 
   awareness.state = anyAlert ? "alert" : "idle";
+
+  if (messages && awareness.state !== prevState) {
+    if (awareness.state === "alert" && alertEntity !== null) {
+      const name = entityName(world, alertEntity);
+      messages.add(
+        `[sense] Player: idle → alert (sees alert ${name})`,
+        "debug",
+      );
+    } else if (awareness.state === "idle") {
+      messages.add(
+        `[sense] Player: alert → idle (no threats visible)`,
+        "debug",
+      );
+    }
+  }
 }
 
-function updateAllAwareness(world: World, map: GameMap): void {
+function updateAllAwareness(
+  world: World,
+  map: GameMap,
+  messages?: MessageLog,
+): void {
   const aiEntities = world.query(
     "AIControlled",
     "Senses",
@@ -149,11 +198,15 @@ function updateAllAwareness(world: World, map: GameMap): void {
     "Faction",
   );
   for (const entity of aiEntities) {
-    updateAwareness(world, map, entity);
+    updateAwareness(world, map, entity, messages);
   }
 }
 
-export function computePlayerFOW(world: World, map: GameMap): Set<string> {
+export function computePlayerFOW(
+  world: World,
+  map: GameMap,
+  messages?: MessageLog,
+): Set<string> {
   const players = world.query("PlayerControlled", "Position", "Senses");
   if (players.length === 0) return new Set();
 
@@ -163,13 +216,31 @@ export function computePlayerFOW(world: World, map: GameMap): Set<string> {
 
   const visible = computeVisibleTiles(map, pos.x, pos.y, senses.vision.range);
 
+  let newTiles = 0;
   for (const key of visible) {
     const [x, y] = key.split(",").map(Number);
+    if (!map.isExplored(x!, y!)) newTiles++;
     map.markExplored(x!, y!);
   }
 
-  updateAllAwareness(world, map);
-  updatePlayerAwareness(world, map, visible);
+  if (messages && newTiles > 0) {
+    messages.add(`[sense] Player revealed ${newTiles} new tiles`, "debug");
+  }
+
+  const spottedBefore = new Set<Entity>();
+  if (messages) {
+    const visibleEntities = world.query("Position", "Faction");
+    for (const e of visibleEntities) {
+      if (e === player) continue;
+      const ePos = world.getComponent(e, "Position")!;
+      if (visible.has(`${ePos.x},${ePos.y}`)) {
+        spottedBefore.add(e);
+      }
+    }
+  }
+
+  updateAllAwareness(world, map, messages);
+  updatePlayerAwareness(world, map, visible, messages);
 
   return visible;
 }
