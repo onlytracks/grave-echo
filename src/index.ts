@@ -45,6 +45,7 @@ function main(): void {
     carryCapacity: 30,
   });
   world.addComponent(player, "Equipment", { weapon: null });
+  world.addComponent(player, "Senses", { vision: { range: 8 } });
 
   const r0 = rooms[0]!;
   createIronSword(world, r0.x + 1, r0.y + 1);
@@ -90,6 +91,13 @@ function main(): void {
     });
     world.addComponent(goblin, "Collidable", { blocksMovement: true });
     world.addComponent(goblin, "Faction", { factionId: "enemy" });
+    world.addComponent(goblin, "Senses", { vision: { range: 6 } });
+    world.addComponent(goblin, "Awareness", {
+      state: "idle",
+      lastKnownTarget: null,
+      alertDuration: 5,
+      turnsWithoutTarget: 0,
+    });
   }
 
   enableRawMode();

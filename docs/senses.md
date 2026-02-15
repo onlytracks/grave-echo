@@ -49,10 +49,10 @@ how it acts on its turn.
 
 ### States
 
-| State   | Behavior                                                          |
-| ------- | ----------------------------------------------------------------- |
-| `idle`  | Entity does nothing. Stands in place. Waiting for sensory input.  |
-| `alert` | Entity has detected a target. Actively pursues and attacks.       |
+| State   | Behavior                                                         |
+| ------- | ---------------------------------------------------------------- |
+| `idle`  | Entity does nothing. Stands in place. Waiting for sensory input. |
+| `alert` | Entity has detected a target. Actively pursues and attacks.      |
 
 ### Transitions
 
@@ -64,11 +64,13 @@ alert → idle:   Target has been out of sensory range for alertDuration turns
 ### State Details
 
 **Idle:**
+
 - Entity does not move or attack
 - Entity still checks senses each turn (passive perception)
 - Renderable appearance could differ (future: dimmer color when idle)
 
 **Alert:**
+
 - Entity actively pursues its target using its AI behavior pattern
 - `lastKnownTarget` tracks where the target was last sensed
 - If the target leaves sensory range, a countdown (`alertDuration`) begins
@@ -81,6 +83,7 @@ alert → idle:   Target has been out of sensory range for alertDuration turns
 ### Future States
 
 Additional states can be added as mechanics require them:
+
 - `searching` — moving to investigate a sound or last known position
 - `fleeing` — retreating when health is low
 - `patrolling` — following a predefined path when idle
@@ -92,11 +95,11 @@ These are not implemented now. The state field is a string union that can be ext
 The player's vision determines what is rendered on screen. Every tile on the map is in
 one of three states:
 
-| State       | Rendering                                    | Entities Shown? |
-| ----------- | -------------------------------------------- | --------------- |
-| `hidden`    | Black / not rendered                         | No              |
-| `explored`  | Dimmed (dark gray walls, dark gray floor)    | No              |
-| `visible`   | Full color                                   | Yes             |
+| State      | Rendering                                 | Entities Shown? |
+| ---------- | ----------------------------------------- | --------------- |
+| `hidden`   | Black / not rendered                      | No              |
+| `explored` | Dimmed (dark gray walls, dark gray floor) | No              |
+| `visible`  | Full color                                | Yes             |
 
 - **Hidden:** The player has never seen this tile. Rendered as empty black space.
 - **Explored:** The player has previously seen this tile but it's not currently in view.
@@ -123,7 +126,9 @@ a player rendering concern only.
 
 ```typescript
 Senses: {
-  vision: { range: number };
+  vision: {
+    range: number;
+  }
   // Future:
   // hearing?: { range: number };
   // smell?: { range: number };
@@ -163,12 +168,14 @@ Runs at the start of each entity's turn, before the AI system decides actions:
 ### AI System Update
 
 The AI system checks `Awareness.state` before acting:
+
 - `idle`: skip turn entirely (no movement, no actions)
 - `alert`: execute behavior pattern as normal
 
 ### Render System Update
 
 The render system uses the player's current visible tile set:
+
 - Only render entities on tiles that are in the player's visible set
 - Render explored-but-not-visible tiles in dimmed colors
 - Don't render hidden tiles at all

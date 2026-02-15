@@ -32,6 +32,7 @@ export const WALL_TILE: Tile = {
 
 export class GameMap {
   private tiles: Tile[][];
+  private explored: boolean[][];
 
   constructor(
     public readonly width: number,
@@ -40,6 +41,9 @@ export class GameMap {
   ) {
     this.tiles = Array.from({ length: height }, () =>
       Array.from({ length: width }, () => ({ ...defaultTile })),
+    );
+    this.explored = Array.from({ length: height }, () =>
+      Array.from({ length: width }, () => false),
     );
   }
 
@@ -61,5 +65,16 @@ export class GameMap {
   isWalkable(x: number, y: number): boolean {
     const tile = this.getTile(x, y);
     return tile?.walkable ?? false;
+  }
+
+  markExplored(x: number, y: number): void {
+    if (this.isInBounds(x, y)) {
+      this.explored[y]![x] = true;
+    }
+  }
+
+  isExplored(x: number, y: number): boolean {
+    if (!this.isInBounds(x, y)) return false;
+    return this.explored[y]![x]!;
   }
 }

@@ -2,6 +2,7 @@ import type { World, Entity } from "../world.ts";
 import type { GameMap } from "../../map/game-map.ts";
 import type { MessageLog } from "./messages.ts";
 import { tryMove } from "./movement.ts";
+import { updateAwareness } from "./sensory.ts";
 
 function chargerBehavior(
   world: World,
@@ -12,14 +13,29 @@ function chargerBehavior(
   const ai = world.getComponent(entity, "AIControlled")!;
   const pos = world.getComponent(entity, "Position")!;
   const turnActor = world.getComponent(entity, "TurnActor")!;
+  const awareness = world.getComponent(entity, "Awareness");
 
-  if (ai.targetEntity === null) return;
-  const targetPos = world.getComponent(ai.targetEntity, "Position");
-  if (!targetPos) return;
+  let goalX: number;
+  let goalY: number;
+
+  if (ai.targetEntity !== null) {
+    const targetPos = world.getComponent(ai.targetEntity, "Position");
+    if (targetPos) {
+      goalX = targetPos.x;
+      goalY = targetPos.y;
+    } else {
+      return;
+    }
+  } else if (awareness?.lastKnownTarget) {
+    goalX = awareness.lastKnownTarget.x;
+    goalY = awareness.lastKnownTarget.y;
+  } else {
+    return;
+  }
 
   while (turnActor.movementRemaining > 0 && !turnActor.hasActed) {
-    const dx = targetPos.x - pos.x;
-    const dy = targetPos.y - pos.y;
+    const dx = goalX - pos.x;
+    const dy = goalY - pos.y;
 
     if (dx === 0 && dy === 0) break;
 
@@ -56,6 +72,11 @@ export function processAI(
     "Stats",
   );
   for (const entity of aiEntities) {
+    updateAwareness(world, map, entity);
+
+    const awareness = world.getComponent(entity, "Awareness");
+    if (awareness && awareness.state === "idle") continue;
+
     const ai = world.getComponent(entity, "AIControlled")!;
     switch (ai.pattern) {
       case "charger":

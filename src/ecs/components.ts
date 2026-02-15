@@ -70,6 +70,17 @@ export interface Equipment {
   weapon: number | null;
 }
 
+export interface Senses {
+  vision: { range: number };
+}
+
+export interface Awareness {
+  state: "idle" | "alert";
+  lastKnownTarget: { x: number; y: number } | null;
+  alertDuration: number;
+  turnsWithoutTarget: number;
+}
+
 export interface ComponentMap {
   Position: Position;
   Renderable: Renderable;
@@ -85,6 +96,8 @@ export interface ComponentMap {
   Consumable: Consumable;
   Inventory: Inventory;
   Equipment: Equipment;
+  Senses: Senses;
+  Awareness: Awareness;
 }
 
 export type ComponentType = keyof ComponentMap;

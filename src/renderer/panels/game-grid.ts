@@ -13,6 +13,7 @@ export function renderGameGrid(
   map: GameMap,
   region: { x: number; y: number; width: number; height: number },
   viewport: Viewport,
+  visibleTiles: Set<string>,
 ): void {
   renderer.drawBox(region.x, region.y, region.width, region.height);
 
@@ -25,8 +26,11 @@ export function renderGameGrid(
     for (let dx = 0; dx < innerW; dx++) {
       const mapX = viewport.x + dx;
       const mapY = viewport.y + dy;
+      const key = `${mapX},${mapY}`;
       const tile = map.getTile(mapX, mapY);
-      if (tile) {
+      if (!tile) continue;
+
+      if (visibleTiles.has(key)) {
         renderer.drawCell(
           innerX + dx,
           innerY + dy,
@@ -34,6 +38,8 @@ export function renderGameGrid(
           tile.fg as Color,
           tile.bg as Color,
         );
+      } else if (map.isExplored(mapX, mapY)) {
+        renderer.drawCell(innerX + dx, innerY + dy, tile.char, "gray", "black");
       }
     }
   }
@@ -42,6 +48,9 @@ export function renderGameGrid(
   for (const entity of entities) {
     const pos = world.getComponent(entity, "Position")!;
     const rend = world.getComponent(entity, "Renderable")!;
+
+    if (!visibleTiles.has(`${pos.x},${pos.y}`)) continue;
+
     const screenX = pos.x - viewport.x;
     const screenY = pos.y - viewport.y;
     if (screenX >= 0 && screenX < innerW && screenY >= 0 && screenY < innerH) {

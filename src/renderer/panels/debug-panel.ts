@@ -89,6 +89,21 @@ export function renderDebugPanel(
     if (hp) line(` hp: ${hp.current}/${hp.max}`);
     line(` ai: ${ai.pattern} → ${ai.targetEntity ?? "none"}`);
 
+    const awareness = world.getComponent(eid, "Awareness");
+    if (awareness) {
+      line(` aware: ${awareness.state}`);
+      if (awareness.state === "alert") {
+        line(
+          ` noSee: ${awareness.turnsWithoutTarget}/${awareness.alertDuration}`,
+        );
+        if (awareness.lastKnownTarget) {
+          line(
+            ` last: ${awareness.lastKnownTarget.x},${awareness.lastKnownTarget.y}`,
+          );
+        }
+      }
+    }
+
     if (ai.targetEntity !== null) {
       const targetPos = world.getComponent(ai.targetEntity, "Position");
       if (targetPos) {

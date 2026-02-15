@@ -14,6 +14,7 @@ import { processAI } from "./ecs/systems/ai.ts";
 import { processHealth } from "./ecs/systems/health.ts";
 import { MessageLog } from "./ecs/systems/messages.ts";
 import { waitForInput } from "./input/input-handler.ts";
+import { computePlayerFOW } from "./ecs/systems/sensory.ts";
 
 export enum GameState {
   Gameplay,
@@ -24,6 +25,7 @@ export enum GameState {
 export class Game {
   state = GameState.Gameplay;
   private messages = new MessageLog();
+  private visibleTiles = new Set<string>();
   constructor(
     private world: World,
     private map: GameMap,
@@ -32,6 +34,7 @@ export class Game {
 
   async run(): Promise<void> {
     startPlayerTurn(this.world);
+    this.visibleTiles = computePlayerFOW(this.world, this.map);
 
     while (this.state === GameState.Gameplay) {
       this.render();
@@ -46,6 +49,7 @@ export class Game {
         endPlayerTurn(this.world);
       } else {
         handlePlayerInput(this.world, this.map, event, this.messages);
+        this.visibleTiles = computePlayerFOW(this.world, this.map);
       }
 
       const healthResult = processHealth(this.world, this.messages);
@@ -63,6 +67,7 @@ export class Game {
           break;
         }
         startPlayerTurn(this.world);
+        this.visibleTiles = computePlayerFOW(this.world, this.map);
       }
     }
 
@@ -118,6 +123,7 @@ export class Game {
       this.map,
       { x: 0, y: 0, width: gridW, height: gridH },
       this.calculateViewport(gridW - 2, gridH - 2),
+      this.visibleTiles,
     );
     renderDebugPanel(this.renderer, this.world, {
       x: gridW,
