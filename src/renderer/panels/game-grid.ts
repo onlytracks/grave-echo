@@ -1,0 +1,55 @@
+import type { Color, Renderer } from "../renderer.ts";
+import type { World } from "../../ecs/world.ts";
+import type { GameMap } from "../../map/game-map.ts";
+
+export interface Viewport {
+  x: number;
+  y: number;
+}
+
+export function renderGameGrid(
+  renderer: Renderer,
+  world: World,
+  map: GameMap,
+  region: { x: number; y: number; width: number; height: number },
+  viewport: Viewport,
+): void {
+  renderer.drawBox(region.x, region.y, region.width, region.height);
+
+  const innerX = region.x + 1;
+  const innerY = region.y + 1;
+  const innerW = region.width - 2;
+  const innerH = region.height - 2;
+
+  for (let dy = 0; dy < innerH; dy++) {
+    for (let dx = 0; dx < innerW; dx++) {
+      const mapX = viewport.x + dx;
+      const mapY = viewport.y + dy;
+      const tile = map.getTile(mapX, mapY);
+      renderer.drawCell(
+        innerX + dx,
+        innerY + dy,
+        tile.char,
+        tile.fg as Color,
+        tile.bg as Color,
+      );
+    }
+  }
+
+  const entities = world.query("Position", "Renderable");
+  for (const entity of entities) {
+    const pos = world.getComponent(entity, "Position")!;
+    const rend = world.getComponent(entity, "Renderable")!;
+    const screenX = pos.x - viewport.x;
+    const screenY = pos.y - viewport.y;
+    if (screenX >= 0 && screenX < innerW && screenY >= 0 && screenY < innerH) {
+      renderer.drawCell(
+        innerX + screenX,
+        innerY + screenY,
+        rend.char,
+        rend.fg as Color,
+        rend.bg as Color,
+      );
+    }
+  }
+}
