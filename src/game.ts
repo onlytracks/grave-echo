@@ -256,6 +256,12 @@ export class Game {
     const boxY = r.y + 1;
     const boxH = 9;
 
+    for (let y = boxY; y < boxY + boxH; y++) {
+      for (let x = boxX; x < boxX + boxW; x++) {
+        this.renderer.drawCell(x, y, " ", "white", "black");
+      }
+    }
+
     this.renderer.drawBox(boxX, boxY, boxW, boxH);
 
     const cx = boxX + 2;
