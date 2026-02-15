@@ -23,9 +23,18 @@ export function pickup(
 
   const equipment = world.getComponent(entity, "Equipment");
   if (equipment) {
-    const weapon = world.getComponent(itemEntity, "Weapon");
-    if (weapon && equipment.weapon === null) {
+    if (world.hasComponent(itemEntity, "Weapon") && equipment.weapon === null) {
       equipWeapon(world, entity, itemEntity, messages);
+    } else if (
+      world.hasComponent(itemEntity, "Armor") &&
+      equipment.armor === null
+    ) {
+      equipArmor(world, entity, itemEntity, messages);
+    } else if (
+      world.hasComponent(itemEntity, "Accessory") &&
+      (equipment.accessory1 === null || equipment.accessory2 === null)
+    ) {
+      equipAccessory(world, entity, itemEntity, messages);
     }
   }
 

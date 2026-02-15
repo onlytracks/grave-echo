@@ -78,6 +78,39 @@ function createBow(world: World, x: number, y: number): number {
   return e;
 }
 
+function createArmor(world: World, x: number, y: number): number {
+  const e = world.createEntity();
+  world.addComponent(e, "Position", { x, y });
+  world.addComponent(e, "Renderable", { char: "[", fg: "green", bg: "black" });
+  world.addComponent(e, "Item", {
+    name: "Leather Armor",
+    weight: 5,
+    rarity: "common",
+  });
+  world.addComponent(e, "Armor", {
+    defense: 2,
+    speedPenalty: 0,
+    armorType: "light",
+  });
+  return e;
+}
+
+function createAccessory(world: World, x: number, y: number): number {
+  const e = world.createEntity();
+  world.addComponent(e, "Position", { x, y });
+  world.addComponent(e, "Renderable", { char: "°", fg: "cyan", bg: "black" });
+  world.addComponent(e, "Item", {
+    name: "Ring of Strength",
+    weight: 1,
+    rarity: "uncommon",
+  });
+  world.addComponent(e, "Accessory", {
+    slot: "accessory",
+    bonuses: [{ stat: "strength", value: 2 }],
+  });
+  return e;
+}
+
 function createPotion(world: World, x: number, y: number): number {
   const e = world.createEntity();
   world.addComponent(e, "Position", { x, y });
@@ -270,13 +303,71 @@ describe("Inventory System", () => {
     expect(eq.weapon).toBe(sword);
   });
 
-  test("pickup does not auto-equip non-weapon items", () => {
+  test("pickup does not auto-equip non-equippable items", () => {
     const { world, messages, player } = setupWorld();
     const potion = createPotion(world, 5, 5);
     pickup(world, player, potion, messages);
 
     const eq = world.getComponent(player, "Equipment")!;
     expect(eq.weapon).toBeNull();
+    expect(eq.armor).toBeNull();
+    expect(eq.accessory1).toBeNull();
+    expect(eq.accessory2).toBeNull();
+  });
+
+  test("pickup auto-equips armor when no armor equipped", () => {
+    const { world, messages, player } = setupWorld();
+    const armor = createArmor(world, 5, 5);
+    pickup(world, player, armor, messages);
+
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.armor).toBe(armor);
+  });
+
+  test("pickup does not auto-equip armor when armor already equipped", () => {
+    const { world, messages, player } = setupWorld();
+    const armor1 = createArmor(world, 5, 5);
+    const armor2 = createArmor(world, 5, 5);
+    pickup(world, player, armor1, messages);
+    pickup(world, player, armor2, messages);
+
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.armor).toBe(armor1);
+  });
+
+  test("pickup auto-equips accessory when slots are empty", () => {
+    const { world, messages, player } = setupWorld();
+    const acc = createAccessory(world, 5, 5);
+    pickup(world, player, acc, messages);
+
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.accessory1).toBe(acc);
+  });
+
+  test("pickup auto-equips second accessory into accessory2", () => {
+    const { world, messages, player } = setupWorld();
+    const acc1 = createAccessory(world, 5, 5);
+    const acc2 = createAccessory(world, 5, 5);
+    pickup(world, player, acc1, messages);
+    pickup(world, player, acc2, messages);
+
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.accessory1).toBe(acc1);
+    expect(eq.accessory2).toBe(acc2);
+  });
+
+  test("pickup does not auto-equip accessory when both slots full", () => {
+    const { world, messages, player } = setupWorld();
+    const acc1 = createAccessory(world, 5, 5);
+    const acc2 = createAccessory(world, 5, 5);
+    const acc3 = createAccessory(world, 5, 5);
+    pickup(world, player, acc1, messages);
+    pickup(world, player, acc2, messages);
+    pickup(world, player, acc3, messages);
+
+    const eq = world.getComponent(player, "Equipment")!;
+    expect(eq.accessory1).toBe(acc1);
+    expect(eq.accessory2).toBe(acc2);
   });
 
   test("auto-equip messages appear in correct order", () => {

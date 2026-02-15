@@ -150,7 +150,6 @@ describe("Equip Accessories", () => {
     const { world, messages, player } = setupWorld();
     const ring = createRing(world);
     pickup(world, player, ring, messages);
-    equip(world, player, ring, messages);
 
     const eq = world.getComponent(player, "Equipment")!;
     expect(eq.accessory1).toBe(ring);
@@ -163,8 +162,6 @@ describe("Equip Accessories", () => {
     const amulet = createAmulet(world);
     pickup(world, player, ring, messages);
     pickup(world, player, amulet, messages);
-    equip(world, player, ring, messages);
-    equip(world, player, amulet, messages);
 
     const eq = world.getComponent(player, "Equipment")!;
     expect(eq.accessory1).toBe(ring);
@@ -217,12 +214,8 @@ describe("Equipment with all 4 slots populated", () => {
     pickup(world, player, ring, messages);
     pickup(world, player, amulet, messages);
 
-    equip(world, player, armor, messages);
-    equip(world, player, ring, messages);
-    equip(world, player, amulet, messages);
-
     const eq = world.getComponent(player, "Equipment")!;
-    expect(eq.weapon).toBe(sword); // auto-equipped
+    expect(eq.weapon).toBe(sword);
     expect(eq.armor).toBe(armor);
     expect(eq.accessory1).toBe(ring);
     expect(eq.accessory2).toBe(amulet);
