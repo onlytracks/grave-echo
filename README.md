@@ -29,6 +29,11 @@ generation, pathfinding, combat/AI systems, and test coverage around core subsys
 
 ## Getting started
 
+Prerequisites:
+
+- Bun
+- A terminal configured with a **Nerd Font** (required for many item glyphs)
+
 ```bash
 bun install
 bun run start
