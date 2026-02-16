@@ -1,5 +1,6 @@
 import type { World } from "../ecs/world.ts";
 import type { Room } from "./dungeon-generator.ts";
+import type { Zone } from "./zones.ts";
 import {
   createIronSword,
   createSwordAndShield,
@@ -375,11 +376,23 @@ export function populateRooms(
   config: PopulatorConfig,
   messages?: MessageLog,
   rng: () => number = Math.random,
+  zones: Zone[] = [],
 ): { player: number } {
   let playerEntity = -1;
   let enemyIndex = 0;
 
-  for (const room of rooms) {
+  // Build room-to-zone lookup
+  const roomToZone = new Map<number, Zone>();
+  for (const zone of zones) {
+    for (const ri of zone.rooms) {
+      roomToZone.set(ri, zone);
+    }
+  }
+
+  for (let ri = 0; ri < rooms.length; ri++) {
+    const room = rooms[ri]!;
+    const zone = roomToZone.get(ri);
+
     for (const sp of room.spawnPoints) {
       switch (sp.type) {
         case "player": {
@@ -400,16 +413,19 @@ export function populateRooms(
               rng,
             );
             messages?.add(
-              `[spawn] G#${boss} at (${sp.x},${sp.y}) [boss, intensity=${room.intensity.toFixed(2)}]`,
+              `[spawn] G#${boss} at (${sp.x},${sp.y}) [boss, intensity=${room.intensity.toFixed(2)}, zone=${zone?.name ?? "?"}]`,
               "debug",
             );
           } else {
+            const zoneDifficulty = zone
+              ? config.difficulty * (0.8 + zone.intensity * 0.4)
+              : config.difficulty;
             const enemy = spawnEnemyByContext(
               world,
               sp.x,
               sp.y,
               playerEntity,
-              config.difficulty,
+              zoneDifficulty,
               room.intensity,
               room.tag,
               enemyIndex,
@@ -419,7 +435,7 @@ export function populateRooms(
             const renderable = world.getComponent(enemy, "Renderable");
             const ai = world.getComponent(enemy, "AIControlled");
             messages?.add(
-              `[spawn] ${renderable?.char ?? "?"}#${enemy} at (${sp.x},${sp.y}) [${ai?.pattern ?? "?"}, intensity=${room.intensity.toFixed(2)}]`,
+              `[spawn] ${renderable?.char ?? "?"}#${enemy} at (${sp.x},${sp.y}) [${ai?.pattern ?? "?"}, intensity=${room.intensity.toFixed(2)}, zone=${zone?.name ?? "?"}]`,
               "debug",
             );
           }

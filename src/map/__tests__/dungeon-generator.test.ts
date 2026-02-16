@@ -10,18 +10,18 @@ function seededRng(seed: number): () => number {
 }
 
 describe("Dungeon Generator", () => {
-  describe("default config (120×80)", () => {
+  describe("default config (150×100)", () => {
     const rng = seededRng(42);
     const { map, rooms } = generateDungeon(rng);
 
     test("map has correct dimensions", () => {
-      expect(map.width).toBe(120);
-      expect(map.height).toBe(80);
+      expect(map.width).toBe(150);
+      expect(map.height).toBe(100);
     });
 
     test("generates target room count", () => {
       expect(rooms.length).toBeGreaterThanOrEqual(5);
-      expect(rooms.length).toBeLessThanOrEqual(12);
+      expect(rooms.length).toBeLessThanOrEqual(20);
     });
 
     test("all room centers are walkable", () => {
@@ -136,7 +136,7 @@ describe("Dungeon Generator", () => {
 
   test("backward compat: rng function as sole argument", () => {
     const { map } = generateDungeon(seededRng(42));
-    expect(map.width).toBe(120);
-    expect(map.height).toBe(80);
+    expect(map.width).toBe(150);
+    expect(map.height).toBe(100);
   });
 });

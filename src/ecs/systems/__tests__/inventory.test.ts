@@ -535,12 +535,7 @@ describe("Pickup all items at position", () => {
     createBow(world, 5, 5);
     createPotion(world, 5, 5);
 
-    const result = handlePlayerInput(
-      world,
-      map,
-      { type: "pickup" },
-      messages,
-    );
+    const result = handlePlayerInput(world, map, { type: "pickup" }, messages);
     expect(result).toBe(true);
 
     const inv = world.getComponent(player, "Inventory")!;
@@ -557,12 +552,7 @@ describe("Pickup all items at position", () => {
     createBow(world, 5, 5); // weight 4
     createPotion(world, 5, 5); // weight 1 — won't fit (6+4=10, at capacity)
 
-    const result = handlePlayerInput(
-      world,
-      map,
-      { type: "pickup" },
-      messages,
-    );
+    const result = handlePlayerInput(world, map, { type: "pickup" }, messages);
     expect(result).toBe(true);
     expect(inv.items.length).toBe(2);
     expect(inv.totalWeight).toBe(10);
@@ -573,12 +563,7 @@ describe("Pickup all items at position", () => {
     const map = new GameMap(10, 10);
     createSword(world, 3, 3); // different position
 
-    const result = handlePlayerInput(
-      world,
-      map,
-      { type: "pickup" },
-      messages,
-    );
+    const result = handlePlayerInput(world, map, { type: "pickup" }, messages);
     expect(result).toBe(false);
     expect(messages.getMessages()).toContain("Nothing to pick up here.");
   });

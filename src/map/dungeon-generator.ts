@@ -1,6 +1,7 @@
 import { GameMap, FLOOR_TILE, WALL_TILE } from "./game-map.ts";
 import { assignWallCharacters } from "./tile-utils.ts";
 import { buildRoomGraph, type RoomGraph } from "./room-graph.ts";
+import { assignZones, applyZoneThemes, type Zone } from "./zones.ts";
 
 export type RoomTag =
   | "entry"
@@ -26,6 +27,7 @@ export interface Room {
   spawnPoints: SpawnPoint[];
   depth: number;
   intensity: number;
+  zoneIndex: number;
 }
 
 export interface DungeonConfig {
@@ -40,13 +42,14 @@ export interface DungeonConfig {
 export interface DungeonResult {
   map: GameMap;
   rooms: Room[];
+  zones: Zone[];
   graph: RoomGraph;
 }
 
 const DEFAULT_CONFIG: DungeonConfig = {
-  width: 120,
-  height: 80,
-  roomCount: 10,
+  width: 150,
+  height: 100,
+  roomCount: 16,
   roomMinSize: 5,
   roomMaxSize: 14,
   rng: Math.random,
@@ -675,6 +678,7 @@ export function generateDungeon(
       spawnPoints: [],
       depth: 0,
       intensity: 0,
+      zoneIndex: -1,
     };
 
     if (rooms.some((r) => roomsOverlap(r, candidate, 1))) continue;
@@ -729,7 +733,17 @@ export function generateDungeon(
     graph.criticalPath.push(...path);
   }
 
+  const zones = assignZones(rooms, graph);
+
+  // Set zoneIndex on each room
+  for (let zi = 0; zi < zones.length; zi++) {
+    for (const ri of zones[zi]!.rooms) {
+      rooms[ri]!.zoneIndex = zi;
+    }
+  }
+
   generateSpawnPoints(rooms, map, rng);
+  applyZoneThemes(map, rooms, zones, rng);
   assignWallCharacters(map);
-  return { map, rooms, graph };
+  return { map, rooms, zones, graph };
 }

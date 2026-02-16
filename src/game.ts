@@ -99,7 +99,7 @@ export class Game {
 
   private initNewRun(): void {
     this.world = new World();
-    const { map, rooms, graph } = generateDungeon();
+    const { map, rooms, zones, graph } = generateDungeon();
     this.map = map;
     this.messages = new MessageLog();
     this.state = GameState.Running;
@@ -120,7 +120,19 @@ export class Game {
       "debug",
     );
 
-    populateRooms(this.world, rooms, this.populatorConfig, this.messages);
+    const zoneSummary = zones
+      .map((z) => `${z.name}(${z.type}, ${z.rooms.length} rooms)`)
+      .join(", ");
+    this.messages.add(`[spawn] Zones: ${zoneSummary}`, "debug");
+
+    populateRooms(
+      this.world,
+      rooms,
+      this.populatorConfig,
+      this.messages,
+      undefined,
+      zones,
+    );
 
     this.messages.setTurn(this.turnCounter);
     this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");
