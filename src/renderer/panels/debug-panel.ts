@@ -17,14 +17,55 @@ function debugMessageColor(msg: TaggedMessage): Color {
   return "gray";
 }
 
-export function renderDebugPanel(
+export function renderDebugMessages(
+  renderer: Renderer,
+  region: Region,
+  messages: readonly TaggedMessage[],
+): void {
+  renderer.drawBox(region.x, region.y, region.width, region.height, "Messages");
+
+  const innerX = region.x + 2;
+  const maxW = region.width - 3;
+  let row = region.y + 1;
+  const maxRow = region.y + region.height - 1;
+
+  if (messages.length === 0) return;
+
+  const availableRows = maxRow - row;
+  const startIdx = Math.max(0, messages.length - availableRows);
+  const visible = messages.slice(startIdx);
+
+  let lastTurn = -1;
+  for (const msg of visible) {
+    if (row >= maxRow) break;
+    if (msg.turn !== lastTurn && msg.turn > 0) {
+      renderer.drawText(
+        innerX,
+        row,
+        `--- Turn ${msg.turn} ---`.slice(0, maxW),
+        "yellow",
+      );
+      row++;
+      lastTurn = msg.turn;
+      if (row >= maxRow) break;
+    }
+    renderer.drawText(
+      innerX,
+      row,
+      msg.text.slice(0, maxW),
+      debugMessageColor(msg),
+    );
+    row++;
+  }
+}
+
+export function renderDebugEntities(
   renderer: Renderer,
   world: World,
   region: Region,
-  messages?: readonly TaggedMessage[],
   map?: GameMap,
 ): void {
-  renderer.drawBox(region.x, region.y, region.width, region.height, "Debug");
+  renderer.drawBox(region.x, region.y, region.width, region.height, "Entities");
 
   const innerX = region.x + 2;
   const maxW = region.width - 3;
@@ -37,25 +78,32 @@ export function renderDebugPanel(
     row++;
   }
 
-  const allEntities = world.query();
   const players = world.query("PlayerControlled");
-  let worldLine = `Entities: ${allEntities.length}`;
   if (players.length > 0) {
     const turn = world.getComponent(players[0]!, "TurnActor");
     if (turn) {
-      worldLine += ` | Acted:${turn.hasActed} Moves:${turn.movementRemaining} 2nd:${turn.secondaryUsed}`;
+      line(
+        `Acted:${turn.hasActed ? "Y" : "N"} Mv:${turn.movementRemaining} 2nd:${turn.secondaryUsed ? "Y" : "N"}`,
+        "white",
+      );
     }
   }
-  line(worldLine, "white");
 
-  const aiEntities = world.query("AIControlled", "Position");
   const playerPos =
     players.length > 0
       ? world.getComponent(players[0]!, "Position")
       : undefined;
 
+  const aiEntities = world.query("AIControlled", "Position");
   const threatSources: string[] = [];
-  const aiLines: { text: string; color: Color }[] = [];
+
+  interface AIInfo {
+    text: string;
+    color: Color;
+    dist: number;
+  }
+
+  const aiLines: AIInfo[] = [];
 
   for (const eid of aiEntities) {
     const pos = world.getComponent(eid, "Position")!;
@@ -63,29 +111,27 @@ export function renderDebugPanel(
     const rend = world.getComponent(eid, "Renderable");
     const awareness = world.getComponent(eid, "Awareness");
     const senses = world.getComponent(eid, "Senses");
-    const name = rend ? rend.char : "?";
-    let part = `${name}#${eid}`;
-    if (hp) part += ` ${hp.current}/${hp.max}hp`;
+    const glyph = rend ? rend.char : "?";
+    let part = `${glyph}#${eid}`;
+    if (hp) part += ` ${hp.current}/${hp.max}`;
 
     if (awareness) {
       if (awareness.state === "alert") {
-        part += ` [alert ${awareness.turnsWithoutTarget}/${awareness.alertDuration}]`;
+        part += ` alrt ${awareness.turnsWithoutTarget}/${awareness.alertDuration}`;
       } else {
-        part += ` [idle]`;
+        part += ` idle`;
       }
     }
 
     const visRange = senses?.vision.range;
-    if (visRange !== undefined) part += ` vis=${visRange}`;
-
-    let dist: number | undefined;
+    let dist = 99;
     let los = false;
     if (playerPos) {
       dist = Math.abs(pos.x - playerPos.x) + Math.abs(pos.y - playerPos.y);
       part += ` d=${dist}`;
       if (map) {
         los = hasLineOfSight(map, pos.x, pos.y, playerPos.x, playerPos.y);
-        part += ` LOS:${los ? "Y" : "N"}`;
+        if (los) part += ` LOS:Y`;
       }
     }
 
@@ -93,38 +139,25 @@ export function renderDebugPanel(
       awareness?.state === "alert" &&
       los &&
       visRange !== undefined &&
-      dist !== undefined &&
       dist <= visRange;
     if (isSensing) {
       part += " ⚠";
-      threatSources.push(`${name}#${eid} (d=${dist}, vis=${visRange}, LOS)`);
+      threatSources.push(`${glyph}#${eid}`);
     }
 
-    aiLines.push({ text: part, color: isSensing ? "yellow" : "cyan" });
+    aiLines.push({ text: part, color: isSensing ? "yellow" : "cyan", dist });
   }
 
   if (threatSources.length > 0) {
     line(`Alert: ${threatSources.join(", ")} sensing you`, "yellow");
   } else if (aiEntities.length > 0) {
-    line("Status: idle (no threats sensing you)", "gray");
+    line("Status: idle", "gray");
   }
 
+  line("─".repeat(Math.min(maxW, region.width - 4)), "darkGray");
+
+  aiLines.sort((a, b) => a.dist - b.dist);
   for (const ai of aiLines) {
     line(ai.text, ai.color);
-  }
-
-  if (messages && messages.length > 0) {
-    const availableRows = maxRow - row;
-    const startIdx = Math.max(0, messages.length - availableRows);
-    const visible = messages.slice(startIdx);
-
-    let lastTurn = -1;
-    for (const msg of visible) {
-      if (msg.turn !== lastTurn && msg.turn > 0) {
-        line(`--- Turn ${msg.turn} ---`, "yellow");
-        lastTurn = msg.turn;
-      }
-      line(msg.text, debugMessageColor(msg));
-    }
   }
 }

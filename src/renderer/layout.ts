@@ -11,11 +11,13 @@ export interface LayoutRegions {
   targetInfo: Region;
   messageLog: Region;
   equipment: Region;
+  debugEntities?: Region;
 }
 
 export function calculateLayout(
   screenWidth: number,
   screenHeight: number,
+  debug?: boolean,
 ): LayoutRegions {
   const minRightCol = 20;
   const minBottomRow = 6;
@@ -32,7 +34,7 @@ export function calculateLayout(
   const playerStatsHeight = Math.floor(topRowHeight / 2);
   const targetInfoHeight = topRowHeight - playerStatsHeight;
 
-  return {
+  const topRow = {
     gameGrid: {
       x: 0,
       y: 0,
@@ -51,6 +53,39 @@ export function calculateLayout(
       width: rightColWidth,
       height: targetInfoHeight,
     },
+  };
+
+  if (debug) {
+    const equipWidth = rightColWidth;
+    const remaining = screenWidth - equipWidth;
+    const entityWidth = Math.max(24, Math.floor(remaining * 0.4));
+    const msgWidth = remaining - entityWidth;
+
+    return {
+      ...topRow,
+      messageLog: {
+        x: 0,
+        y: topRowHeight,
+        width: msgWidth,
+        height: bottomRowHeight,
+      },
+      debugEntities: {
+        x: msgWidth,
+        y: topRowHeight,
+        width: entityWidth,
+        height: bottomRowHeight,
+      },
+      equipment: {
+        x: msgWidth + entityWidth,
+        y: topRowHeight,
+        width: equipWidth,
+        height: bottomRowHeight,
+      },
+    };
+  }
+
+  return {
+    ...topRow,
     messageLog: {
       x: 0,
       y: topRowHeight,

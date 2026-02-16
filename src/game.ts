@@ -3,7 +3,10 @@ import type { GameMap } from "./map/game-map.ts";
 import type { Renderer } from "./renderer/renderer.ts";
 import { calculateLayout } from "./renderer/layout.ts";
 import { renderGameGrid } from "./renderer/panels/game-grid.ts";
-import { renderDebugPanel } from "./renderer/panels/debug-panel.ts";
+import {
+  renderDebugMessages,
+  renderDebugEntities,
+} from "./renderer/panels/debug-panel.ts";
 import { renderPlayerStats } from "./renderer/panels/player-stats.ts";
 import { renderTargetInfo } from "./renderer/panels/target-info.ts";
 import { renderMessageLog } from "./renderer/panels/message-log.ts";
@@ -577,7 +580,7 @@ export class Game {
   private render(): void {
     this.renderer.clear();
     const size = this.renderer.getScreenSize();
-    const layout = calculateLayout(size.width, size.height);
+    const layout = calculateLayout(size.width, size.height, this.debugVisible);
 
     const viewport = this.calculateViewport(
       layout.gameGrid.width - 2,
@@ -603,13 +606,19 @@ export class Game {
     renderEquipment(this.renderer, this.world, layout.equipment);
 
     if (this.debugVisible) {
-      renderDebugPanel(
+      renderDebugMessages(
         this.renderer,
-        this.world,
         layout.messageLog,
         this.messages.getAllMessagesWithTurns(),
-        this.map,
       );
+      if (layout.debugEntities) {
+        renderDebugEntities(
+          this.renderer,
+          this.world,
+          layout.debugEntities,
+          this.map,
+        );
+      }
     } else {
       renderMessageLog(
         this.renderer,
