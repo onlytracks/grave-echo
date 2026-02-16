@@ -21,7 +21,7 @@ export function renderGameGrid(
   map: GameMap,
   region: { x: number; y: number; width: number; height: number },
   viewport: Viewport,
-  visibleTiles: Set<string>,
+  visibleTiles: Set<string> | null,
   targetEntity?: number | null,
 ): void {
   renderer.drawBox(region.x, region.y, region.width, region.height);
@@ -53,7 +53,7 @@ export function renderGameGrid(
       const tile = map.getTile(mapX, mapY);
       if (!tile) continue;
 
-      if (visibleTiles.has(key)) {
+      if (visibleTiles === null || visibleTiles.has(key)) {
         const inTargetVision = targetVision?.has(key) ?? false;
         const fg = tile.walkable && inTargetVision ? "red" : (tile.fg as Color);
         renderer.drawCell(
@@ -82,7 +82,8 @@ export function renderGameGrid(
     const pos = world.getComponent(entity, "Position")!;
     const rend = world.getComponent(entity, "Renderable")!;
 
-    if (!visibleTiles.has(`${pos.x},${pos.y}`)) continue;
+    if (visibleTiles !== null && !visibleTiles.has(`${pos.x},${pos.y}`))
+      continue;
 
     const screenX = pos.x - viewport.x;
     const screenY = pos.y - viewport.y;

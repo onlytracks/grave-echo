@@ -592,7 +592,7 @@ export class Game {
       this.map,
       layout.gameGrid,
       viewport,
-      this.visibleTiles,
+      this.debugVisible ? null : this.visibleTiles,
       this.getPlayerTargetEntity(),
     );
 
