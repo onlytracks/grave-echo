@@ -199,6 +199,33 @@ describe("AI System — Skulker", () => {
     expect(hasFlanking).toBe(true);
   });
 
+  test("only attacks once when bump-attacking during flank movement", () => {
+    // Place skulker 2 tiles away so it takes the flanking path (not the
+    // adjacent shortcut). With speed 3 it can flank to an adjacent tile
+    // and bump-attack. The bug was a second attack after the bump because
+    // the post-flank tryRangedAttack didn't check hasActed.
+    const { world, map, enemy, target, messages } = setupBase({
+      enemyPos: { x: 3, y: 5 },
+      targetPos: { x: 5, y: 5 },
+      pattern: "skulker",
+      speed: 3,
+    });
+    equipWeapon(world, enemy, createIronSword);
+    // Block flanking tiles except the one the skulker will bump through
+    map.setTile(5, 4, { ...WALL_TILE });
+    map.setTile(5, 6, { ...WALL_TILE });
+    map.setTile(6, 5, { ...WALL_TILE });
+    resetAITurns(world);
+    processAI(world, map, messages);
+    const targetHealth = world.getComponent(target, "Health")!;
+    const damageTaken = 20 - targetHealth.current;
+    const attackMsgs = messages
+      .getAllMessagesWithTurns()
+      .filter((m) => m.category === "gameplay" && m.text.includes("attacks"));
+    expect(attackMsgs.length).toBe(1);
+    expect(damageTaken).toBeGreaterThan(0);
+  });
+
   test("falls back to charger when flanking blocked", () => {
     const { world, map, enemy, messages } = setupBase({
       enemyPos: { x: 3, y: 5 },

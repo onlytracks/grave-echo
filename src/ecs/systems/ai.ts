@@ -380,8 +380,9 @@ function skulkerBehavior(
       );
     }
 
+    const turnActor = world.getComponent(entity, "TurnActor")!;
     const newDist = Math.abs(pos.x - goal.x) + Math.abs(pos.y - goal.y);
-    if (newDist <= 1 && ai.targetEntity !== null) {
+    if (newDist <= 1 && ai.targetEntity !== null && !turnActor.hasActed) {
       tryRangedAttack(world, map, entity, messages);
     }
     return;
