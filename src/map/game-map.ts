@@ -140,8 +140,8 @@ export const PIT_TILE: Tile = {
 
 export const GRASS_TILE: Tile = {
   type: TileType.Grass,
-  char: "\u{F1510}",
-  fg: "green",
+  char: "·",
+  fg: "darkGreen",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -161,7 +161,7 @@ export const TALL_GRASS_TILE: Tile = {
 export const TREE_TILE: Tile = {
   type: TileType.Tree,
   char: "\u{F0531}",
-  fg: "green",
+  fg: "darkGreen",
   bg: "black",
   walkable: false,
   transparent: false,
@@ -171,7 +171,7 @@ export const TREE_TILE: Tile = {
 export const PINE_TREE_TILE: Tile = {
   type: TileType.PineTree,
   char: "\u{F0405}",
-  fg: "green",
+  fg: "darkGreen",
   bg: "black",
   walkable: false,
   transparent: false,
@@ -190,8 +190,8 @@ export const CORRUPTED_TREE_TILE: Tile = {
 
 export const MUSHROOM_TILE: Tile = {
   type: TileType.Mushroom,
-  char: "\u{F07DF}",
-  fg: "brightGreen",
+  char: "·",
+  fg: "darkGreen",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -200,8 +200,8 @@ export const MUSHROOM_TILE: Tile = {
 
 export const FLOWER_TILE: Tile = {
   type: TileType.Flower,
-  char: "\u{F024A}",
-  fg: "yellow",
+  char: ",",
+  fg: "darkGreen",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -210,8 +210,8 @@ export const FLOWER_TILE: Tile = {
 
 export const CORRUPTED_BLOOM_TILE: Tile = {
   type: TileType.CorruptedBloom,
-  char: "\u{F024A}",
-  fg: "magenta",
+  char: ",",
+  fg: "darkMagenta",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -220,7 +220,7 @@ export const CORRUPTED_BLOOM_TILE: Tile = {
 
 export const LEAF_TILE: Tile = {
   type: TileType.Leaf,
-  char: "\u{F032A}",
+  char: "`",
   fg: "darkGreen",
   bg: "black",
   walkable: true,
@@ -230,8 +230,8 @@ export const LEAF_TILE: Tile = {
 
 export const SPROUT_TILE: Tile = {
   type: TileType.Sprout,
-  char: "\u{F0E66}",
-  fg: "green",
+  char: "·",
+  fg: "darkGreen",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -262,7 +262,7 @@ export const DEEP_WATER_TILE: Tile = {
 
 export const CRACKED_FLOOR_TILE: Tile = {
   type: TileType.CrackedFloor,
-  char: "◇",
+  char: "·",
   fg: "darkGray",
   bg: "black",
   walkable: true,
@@ -292,8 +292,8 @@ export const BARREL_TILE: Tile = {
 
 export const COBWEB_TILE: Tile = {
   type: TileType.Cobweb,
-  char: "\u{F0BCA}",
-  fg: "white",
+  char: "·",
+  fg: "darkGray",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -325,7 +325,7 @@ export const TREASURE_CHEST_TILE: Tile = {
 export const CORRUPTION_VEIN_TILE: Tile = {
   type: TileType.CorruptionVein,
   char: "~",
-  fg: "magenta",
+  fg: "darkMagenta",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -334,8 +334,8 @@ export const CORRUPTION_VEIN_TILE: Tile = {
 
 export const BONE_PILE_TILE: Tile = {
   type: TileType.BonePile,
-  char: "\u{F00B9}",
-  fg: "white",
+  char: "·",
+  fg: "darkGray",
   bg: "black",
   walkable: true,
   transparent: true,
@@ -344,8 +344,8 @@ export const BONE_PILE_TILE: Tile = {
 
 export const SKULL_TILE: Tile = {
   type: TileType.Skull,
-  char: "\u{F068C}",
-  fg: "white",
+  char: "·",
+  fg: "darkGray",
   bg: "black",
   walkable: true,
   transparent: true,

@@ -57,10 +57,10 @@ export function makeForestFloor(rng: () => number): Tile {
   return clone(
     weightedPick(
       [
-        { weight: 60, value: GRASS_TILE },
-        { weight: 15, value: LEAF_TILE },
-        { weight: 10, value: FLOWER_TILE },
-        { weight: 10, value: MUSHROOM_TILE },
+        { weight: 75, value: GRASS_TILE },
+        { weight: 10, value: LEAF_TILE },
+        { weight: 5, value: FLOWER_TILE },
+        { weight: 5, value: MUSHROOM_TILE },
         { weight: 5, value: SPROUT_TILE },
       ],
       rng,
@@ -93,12 +93,12 @@ export function makeCorruptedForestFloor(rng: () => number): Tile {
   return clone(
     weightedPick(
       [
-        { weight: 40, value: GRASS_TILE },
-        { weight: 15, value: LEAF_TILE },
+        { weight: 60, value: GRASS_TILE },
+        { weight: 10, value: LEAF_TILE },
         { weight: 10, value: CORRUPTED_BLOOM_TILE },
-        { weight: 15, value: MUSHROOM_TILE },
+        { weight: 5, value: MUSHROOM_TILE },
         { weight: 10, value: TALL_GRASS_TILE },
-        { weight: 10, value: SPROUT_TILE },
+        { weight: 5, value: SPROUT_TILE },
       ],
       rng,
     ),
