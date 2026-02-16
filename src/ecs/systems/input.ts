@@ -57,15 +57,20 @@ export function handlePlayerInput(
   if (event.type === "pickup" && messages) {
     const pos = world.getComponent(player, "Position")!;
     const items = world.query("Position", "Item");
-    const itemHere = items.find((id) => {
+    const itemsHere = items.filter((id) => {
       const p = world.getComponent(id, "Position")!;
       return p.x === pos.x && p.y === pos.y;
     });
-    if (itemHere !== undefined) {
-      return pickup(world, player, itemHere, messages);
+    if (itemsHere.length === 0) {
+      messages.add("Nothing to pick up here.");
+      return false;
     }
-    messages.add("Nothing to pick up here.");
-    return false;
+    let any = false;
+    for (const itemId of itemsHere) {
+      const result = pickup(world, player, itemId, messages);
+      if (result) any = true;
+    }
+    return any;
   }
 
   return false;

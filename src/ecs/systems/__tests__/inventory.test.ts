@@ -10,6 +10,8 @@ import {
   useConsumable,
 } from "../inventory.ts";
 import { getEncumbrancePenalty } from "../turn.ts";
+import { handlePlayerInput } from "../input.ts";
+import { GameMap } from "../../../map/game-map.ts";
 
 function setupWorld() {
   const world = new World();
@@ -522,5 +524,62 @@ describe("Encumbrance", () => {
     const { world, player } = setupWorld();
     world.removeComponent(player, "Inventory");
     expect(getEncumbrancePenalty(world, player)).toBe(0);
+  });
+});
+
+describe("Pickup all items at position", () => {
+  test("single 'e' press picks up all items at player position", () => {
+    const { world, messages, player } = setupWorld();
+    const map = new GameMap(10, 10);
+    createSword(world, 5, 5);
+    createBow(world, 5, 5);
+    createPotion(world, 5, 5);
+
+    const result = handlePlayerInput(
+      world,
+      map,
+      { type: "pickup" },
+      messages,
+    );
+    expect(result).toBe(true);
+
+    const inv = world.getComponent(player, "Inventory")!;
+    expect(inv.items.length).toBe(3);
+  });
+
+  test("picks up what fits, skips items over weight limit", () => {
+    const { world, messages, player } = setupWorld();
+    const map = new GameMap(10, 10);
+    const inv = world.getComponent(player, "Inventory")!;
+    inv.carryCapacity = 10;
+
+    createSword(world, 5, 5); // weight 6
+    createBow(world, 5, 5); // weight 4
+    createPotion(world, 5, 5); // weight 1 — won't fit (6+4=10, at capacity)
+
+    const result = handlePlayerInput(
+      world,
+      map,
+      { type: "pickup" },
+      messages,
+    );
+    expect(result).toBe(true);
+    expect(inv.items.length).toBe(2);
+    expect(inv.totalWeight).toBe(10);
+  });
+
+  test("no items at position shows 'Nothing to pick up here.'", () => {
+    const { world, messages } = setupWorld();
+    const map = new GameMap(10, 10);
+    createSword(world, 3, 3); // different position
+
+    const result = handlePlayerInput(
+      world,
+      map,
+      { type: "pickup" },
+      messages,
+    );
+    expect(result).toBe(false);
+    expect(messages.getMessages()).toContain("Nothing to pick up here.");
   });
 });
