@@ -1,6 +1,7 @@
 import type { World, Entity } from "../world.ts";
 import type { Equipment } from "../components.ts";
 import type { MessageLog } from "./messages.ts";
+import { entityName } from "./entity-name.ts";
 
 export interface HealthResult {
   playerDied: boolean;
@@ -20,14 +21,26 @@ export function processHealth(
     const health = world.getComponent(entity, "Health")!;
     if (health.current <= 0) {
       const isPlayer = world.hasComponent(entity, "PlayerControlled");
+      const pos = world.getComponent(entity, "Position");
+      const posStr = pos ? `at (${pos.x},${pos.y})` : "";
+      const eName = entityName(world, entity);
+
       if (isPlayer) {
         messages.add("You have died!");
+        messages.add(
+          `[death] ${eName} killed ${posStr}, hp=0/${health.max}`,
+          "debug",
+        );
         playerDied = true;
       } else {
         dropAllItems(world, entity, messages, rng);
         const renderable = world.getComponent(entity, "Renderable");
         const name = renderable ? `The ${renderable.char}` : "Something";
         messages.add(`${name} dies!`);
+        messages.add(
+          `[death] ${eName} killed ${posStr}, hp=0/${health.max}`,
+          "debug",
+        );
         if (world.hasComponent(entity, "AIControlled")) {
           enemiesKilled++;
         }

@@ -20,7 +20,11 @@ import {
 import { processAI } from "./ecs/systems/ai.ts";
 import { processHealth } from "./ecs/systems/health.ts";
 import { MessageLog } from "./ecs/systems/messages.ts";
-import { waitForInput, waitForRawInput } from "./input/input-handler.ts";
+import {
+  waitForInput,
+  waitForRawInput,
+  type InputEvent,
+} from "./input/input-handler.ts";
 import {
   createInventoryScreenState,
   handleInventoryInput,
@@ -42,6 +46,7 @@ import {
 } from "./ui/swap-weapon-screen.ts";
 import { renderHelpScreen } from "./renderer/panels/help-screen.ts";
 import { useConsumable } from "./ecs/systems/inventory.ts";
+import { entityName } from "./ecs/systems/entity-name.ts";
 import { computePlayerFOW } from "./ecs/systems/sensory.ts";
 import { clearStaleTarget } from "./ecs/systems/targeting.ts";
 import { generateDungeon } from "./map/dungeon-generator.ts";
@@ -131,7 +136,24 @@ export class Game {
   private clearStaleTargets(): void {
     const player = this.getPlayerEntity();
     if (player !== undefined) {
-      clearStaleTarget(this.world, player, this.visibleTiles);
+      clearStaleTarget(this.world, player, this.visibleTiles, this.messages);
+    }
+  }
+
+  private describeInput(event: InputEvent): string {
+    switch (event.type) {
+      case "move":
+        return `move ${event.direction}`;
+      case "pass":
+        return "wait (.)";
+      case "pickup":
+        return "pickup";
+      case "attack":
+        return "attack";
+      case "cycleTarget":
+        return "cycle target";
+      default:
+        return event.type;
     }
   }
 
@@ -279,10 +301,22 @@ export class Game {
     if (state.weapons.length <= 2) {
       const other = state.weapons.find((id) => id !== state.equippedWeapon)!;
       const equipment = this.world.getComponent(player, "Equipment")!;
+      const prevWeapon = equipment.weapon;
       equipment.weapon = other;
       const item = this.world.getComponent(other, "Item");
       this.messages.add(`You swap to ${item?.name ?? "weapon"}`);
       if (turnActor) turnActor.secondaryUsed = true;
+
+      const prevItem =
+        prevWeapon !== null
+          ? this.world.getComponent(prevWeapon, "Item")
+          : null;
+      const prevName = prevItem ? `${prevItem.name}#${prevWeapon}` : "none";
+      const newName = item ? `${item.name}#${other}` : `#${other}`;
+      this.messages.add(
+        `[inv] Player swapped weapon: ${prevName} → ${newName} (secondary action)`,
+        "debug",
+      );
       return;
     }
 
@@ -314,11 +348,23 @@ export class Game {
 
     if (result !== null) {
       const equipment = this.world.getComponent(player, "Equipment")!;
+      const prevWeapon = equipment.weapon;
       equipment.weapon = result;
       const item = this.world.getComponent(result, "Item");
       this.messages.add(`You swap to ${item?.name ?? "weapon"}`);
       const turnActor = this.world.getComponent(player, "TurnActor");
       if (turnActor) turnActor.secondaryUsed = true;
+
+      const prevItem =
+        prevWeapon !== null
+          ? this.world.getComponent(prevWeapon, "Item")
+          : null;
+      const prevName = prevItem ? `${prevItem.name}#${prevWeapon}` : "none";
+      const newName = item ? `${item.name}#${result}` : `#${result}`;
+      this.messages.add(
+        `[inv] Player swapped weapon: ${prevName} → ${newName} (secondary action, via popup)`,
+        "debug",
+      );
       this.closeSwapWeapon();
     }
   }
@@ -375,11 +421,13 @@ export class Game {
       }
 
       if (event.type === "useItem") {
+        this.messages.add("[input] Player: use item", "debug");
         this.openUseItem();
         continue;
       }
 
       if (event.type === "swapWeapon") {
+        this.messages.add("[input] Player: swap weapon", "debug");
         this.openSwapWeapon();
         continue;
       }
@@ -390,6 +438,10 @@ export class Game {
       }
 
       this.clearStaleTargets();
+      this.messages.add(
+        `[input] Player: ${this.describeInput(event)}`,
+        "debug",
+      );
 
       if (event.type === "pass") {
         const player = this.getPlayerEntity();
@@ -435,7 +487,7 @@ export class Game {
           this.state = GameState.Dead;
           break;
         }
-        processBuffs(this.world);
+        processBuffs(this.world, this.messages);
         this.turnCounter++;
         this.messages.setTurn(this.turnCounter);
         this.messages.add(`[turn] === Turn ${this.turnCounter} ===`, "debug");

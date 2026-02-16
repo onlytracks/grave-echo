@@ -26,7 +26,7 @@ export function handlePlayerInput(
 
   if (event.type === "cycleTarget") {
     if (visibleTiles) {
-      cycleTarget(world, player, visibleTiles);
+      cycleTarget(world, player, visibleTiles, messages);
     }
     return false;
   }

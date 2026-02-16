@@ -1,4 +1,6 @@
 import type { World, Entity } from "../world.ts";
+import type { MessageLog } from "./messages.ts";
+import { entityName } from "./entity-name.ts";
 
 export interface EffectiveStats {
   strength: number;
@@ -64,12 +66,19 @@ export function getEffectiveStats(
   return { strength: str, defense: def, speed: Math.max(0, spd) };
 }
 
-export function processBuffs(world: World): void {
+export function processBuffs(world: World, messages?: MessageLog): void {
   const entities = world.query("Buffs");
   for (const entity of entities) {
     const buffs = world.getComponent(entity, "Buffs")!;
     buffs.active = buffs.active.filter((b) => {
       b.turnsRemaining--;
+      if (b.turnsRemaining <= 0 && messages) {
+        const name = entityName(world, entity);
+        messages.add(
+          `[buff] ${name}: ${b.stat} +${b.value} expired (0 turns remaining)`,
+          "debug",
+        );
+      }
       return b.turnsRemaining > 0;
     });
   }

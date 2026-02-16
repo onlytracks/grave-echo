@@ -4,6 +4,7 @@ import type { MessageLog } from "./messages.ts";
 import { isHostile, attack as performAttack } from "./combat.ts";
 import { hasLineOfSight } from "./sensory.ts";
 import type { AttackType } from "../components.ts";
+import { entityName } from "./entity-name.ts";
 
 export interface AttackValidation {
   valid: boolean;
@@ -38,29 +39,55 @@ export function cycleTarget(
   world: World,
   entity: Entity,
   visibleTiles: Set<string>,
+  messages?: MessageLog,
 ): void {
   const ts = world.getComponent(entity, "TargetSelection");
   if (!ts) return;
 
+  const prev = ts.targetEntity;
   const hostiles = getVisibleHostiles(world, entity, visibleTiles);
   if (hostiles.length === 0) {
     ts.targetEntity = null;
+    if (messages && prev !== null) {
+      const name = entityName(world, entity);
+      messages.add(
+        `[target] ${name} target: ${entityName(world, prev)} → none`,
+        "debug",
+      );
+    }
     return;
   }
 
   if (ts.targetEntity === null || !hostiles.includes(ts.targetEntity)) {
     ts.targetEntity = hostiles[0]!;
-    return;
+  } else {
+    const idx = hostiles.indexOf(ts.targetEntity);
+    ts.targetEntity = hostiles[(idx + 1) % hostiles.length]!;
   }
 
-  const idx = hostiles.indexOf(ts.targetEntity);
-  ts.targetEntity = hostiles[(idx + 1) % hostiles.length]!;
+  if (messages && ts.targetEntity !== prev) {
+    const name = entityName(world, entity);
+    const prevName = prev !== null ? entityName(world, prev) : "none";
+    const newTarget = ts.targetEntity;
+    const newName = entityName(world, newTarget);
+    const pos = world.getComponent(entity, "Position");
+    const targetPos = world.getComponent(newTarget, "Position");
+    let dist = 0;
+    if (pos && targetPos) {
+      dist = Math.abs(targetPos.x - pos.x) + Math.abs(targetPos.y - pos.y);
+    }
+    messages.add(
+      `[target] ${name} target: ${prevName} → ${newName} (dist=${dist})`,
+      "debug",
+    );
+  }
 }
 
 export function clearStaleTarget(
   world: World,
   entity: Entity,
   visibleTiles: Set<string>,
+  messages?: MessageLog,
 ): void {
   const ts = world.getComponent(entity, "TargetSelection");
   if (!ts || ts.targetEntity === null) return;
@@ -68,18 +95,39 @@ export function clearStaleTarget(
   const target = ts.targetEntity;
   const targetPos = world.getComponent(target, "Position");
   const targetHealth = world.getComponent(target, "Health");
+  const name = entityName(world, entity);
 
   if (!targetPos || !targetHealth || targetHealth.current <= 0) {
+    if (messages) {
+      const reason =
+        !targetHealth || targetHealth.current <= 0 ? "dead" : "gone";
+      messages.add(
+        `[target] ${name} target ${entityName(world, target)} cleared: ${reason}`,
+        "debug",
+      );
+    }
     ts.targetEntity = null;
     return;
   }
 
   if (!visibleTiles.has(`${targetPos.x},${targetPos.y}`)) {
+    if (messages) {
+      messages.add(
+        `[target] ${name} target ${entityName(world, target)} cleared: out of sight`,
+        "debug",
+      );
+    }
     ts.targetEntity = null;
     return;
   }
 
   if (!isHostile(world, entity, target)) {
+    if (messages) {
+      messages.add(
+        `[target] ${name} target ${entityName(world, target)} cleared: not hostile`,
+        "debug",
+      );
+    }
     ts.targetEntity = null;
   }
 }
@@ -192,6 +240,21 @@ export function attemptRangedAttack(
   const validation = validateAttack(world, map, attacker, ts.targetEntity);
   if (!validation.valid) {
     messages.add(ATTACK_FAIL_MESSAGES[validation.reason!] ?? "Can't attack.");
+
+    const attackerName = entityName(world, attacker);
+    const targetName = entityName(world, ts.targetEntity);
+    const attackerPos = world.getComponent(attacker, "Position");
+    const targetPos = world.getComponent(ts.targetEntity, "Position");
+    if (attackerPos && targetPos) {
+      const dist =
+        Math.abs(targetPos.x - attackerPos.x) +
+        Math.abs(targetPos.y - attackerPos.y);
+      const weapon = getEquippedWeaponInfo(world, attacker);
+      messages.add(
+        `[combat] ${attackerName} attack failed: ${validation.reason} (target=${targetName} at (${targetPos.x},${targetPos.y}), dist=${dist}, range=${weapon.range})`,
+        "debug",
+      );
+    }
     return false;
   }
 

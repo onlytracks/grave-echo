@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { World } from "../../world.ts";
 import { getEffectiveStats, processBuffs } from "../stats.ts";
+import { MessageLog } from "../messages.ts";
 
 function setupEntity(world: World): number {
   const e = world.createEntity();
@@ -196,5 +197,34 @@ describe("processBuffs", () => {
     processBuffs(world);
     processBuffs(world);
     expect(world.getComponent(e, "Buffs")!.active.length).toBe(0);
+  });
+
+  test("processBuffs accepts optional messages param (backward compatible)", () => {
+    const world = new World();
+    const e = world.createEntity();
+    world.addComponent(e, "Buffs", {
+      active: [{ stat: "strength", value: 2, turnsRemaining: 1 }],
+    });
+
+    processBuffs(world);
+    expect(world.getComponent(e, "Buffs")!.active.length).toBe(0);
+  });
+
+  test("buff expiry emits debug message", () => {
+    const world = new World();
+    const messages = new MessageLog();
+    const e = world.createEntity();
+    world.addComponent(e, "Renderable", { char: "ϛ", fg: "red", bg: "black" });
+    world.addComponent(e, "Buffs", {
+      active: [{ stat: "strength", value: 2, turnsRemaining: 1 }],
+    });
+
+    processBuffs(world, messages);
+
+    const all = messages.getAllMessagesWithTurns();
+    expect(all.length).toBe(1);
+    expect(all[0]!.category).toBe("debug");
+    expect(all[0]!.text).toContain("[buff]");
+    expect(all[0]!.text).toContain("strength +2 expired");
   });
 });

@@ -401,6 +401,98 @@ describe("Inventory System", () => {
   });
 });
 
+describe("Inventory Debug Logging", () => {
+  test("pickup emits debug message with entity IDs and weight", () => {
+    const { world, messages, player } = setupWorld();
+    const sword = createSword(world, 5, 5);
+
+    pickup(world, player, sword, messages);
+
+    const all = messages.getAllMessagesWithTurns();
+    const debugMsgs = all.filter((m) => m.category === "debug");
+    expect(debugMsgs.length).toBeGreaterThanOrEqual(1);
+
+    const pickupDebug = debugMsgs.find(
+      (m) => m.text.includes("[inv]") && m.text.includes("picked up"),
+    );
+    expect(pickupDebug).toBeDefined();
+    expect(pickupDebug!.text).toContain(`Iron Sword#${sword}`);
+    expect(pickupDebug!.text).toContain("weight 0→6/30");
+  });
+
+  test("drop emits debug message with entity IDs and weight", () => {
+    const { world, messages, player } = setupWorld();
+    const sword = createSword(world, 5, 5);
+    pickup(world, player, sword, messages);
+    drop(world, player, sword, messages);
+
+    const all = messages.getAllMessagesWithTurns();
+    const dropDebug = all.find(
+      (m) => m.category === "debug" && m.text.includes("dropped"),
+    );
+    expect(dropDebug).toBeDefined();
+    expect(dropDebug!.text).toContain(`Iron Sword#${sword}`);
+    expect(dropDebug!.text).toContain("weight 6→0/30");
+  });
+
+  test("equip emits debug message with slot info", () => {
+    const { world, messages, player } = setupWorld();
+    const sword = createSword(world, 5, 5);
+    pickup(world, player, sword, messages);
+
+    const all = messages.getAllMessagesWithTurns();
+    const equipDebug = all.find(
+      (m) => m.category === "debug" && m.text.includes("auto-equipped"),
+    );
+    expect(equipDebug).toBeDefined();
+    expect(equipDebug!.text).toContain("weapon slot");
+  });
+
+  test("useConsumable emits debug message with HP details", () => {
+    const { world, messages, player } = setupWorld();
+    const potion = createPotion(world, 5, 5);
+    pickup(world, player, potion, messages);
+    useConsumable(world, player, potion, messages);
+
+    const all = messages.getAllMessagesWithTurns();
+    const useDebug = all.find(
+      (m) =>
+        m.category === "debug" &&
+        m.text.includes("[inv]") &&
+        m.text.includes("used"),
+    );
+    expect(useDebug).toBeDefined();
+    expect(useDebug!.text).toContain("heal");
+    expect(useDebug!.text).toContain("hp 12→20/20");
+  });
+
+  test("consumable depletion emits debug message", () => {
+    const { world, messages, player } = setupWorld();
+    const potion = createPotion(world, 5, 5);
+    pickup(world, player, potion, messages);
+    world.getComponent(potion, "Consumable")!.charges = 1;
+    useConsumable(world, player, potion, messages);
+
+    const all = messages.getAllMessagesWithTurns();
+    const depleteDebug = all.find(
+      (m) => m.category === "debug" && m.text.includes("depleted"),
+    );
+    expect(depleteDebug).toBeDefined();
+    expect(depleteDebug!.text).toContain("0 charges");
+  });
+
+  test("pickup does not change gameplay messages", () => {
+    const { world, messages, player } = setupWorld();
+    const sword = createSword(world, 5, 5);
+    pickup(world, player, sword, messages);
+
+    expect(messages.getMessages()).toEqual([
+      "You pick up Iron Sword",
+      "You equip Iron Sword",
+    ]);
+  });
+});
+
 describe("Encumbrance", () => {
   test("no penalty at 0-50%", () => {
     const { world, player } = setupWorld();
